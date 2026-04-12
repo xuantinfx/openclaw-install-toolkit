@@ -1,4 +1,4 @@
-# openclaw-toolkit
+# openclaw-install-toolkit
 
 One-shot installer that wraps the official [OpenClaw](https://openclaw.ai) setup with an interactive wizard for Telegram + Anthropic credentials.
 
@@ -7,14 +7,14 @@ One-shot installer that wraps the official [OpenClaw](https://openclaw.ai) setup
 ## Install (one-liner, published URL)
 
 ```bash
-curl -fsSL https://raw.githubusercontent.com/<owner>/openclaw-toolkit/main/install.sh | bash -s -- --port 19000
+curl -fsSL https://raw.githubusercontent.com/xuantinfx/openclaw-install-toolkit/main/install.sh | bash -s -- --port 19000
 ```
 
 ## Install (clone)
 
 ```bash
-git clone https://github.com/<owner>/openclaw-toolkit.git
-cd openclaw-toolkit
+git clone https://github.com/xuantinfx/openclaw-install-toolkit.git
+cd openclaw-install-toolkit
 ./install.sh --port 19000
 ```
 
