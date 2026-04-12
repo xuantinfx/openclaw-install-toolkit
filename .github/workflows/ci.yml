@@ -24,7 +24,7 @@ jobs:
         run: brew install shellcheck jq
 
       - name: Shellcheck
-        run: shellcheck install.sh
+        run: shellcheck install.sh install-skill.sh scripts/sync-skill.sh
 
       - name: Dry-run smoke test
         env:
@@ -75,12 +75,42 @@ jobs:
             TOOLKIT_ALLOW_INSECURE=1 \
             ./install-skill.sh test-fixture
 
-          # --dry-run must not write anything new.
+          # --dry-run must not write anything new (not even the skills/ parent).
           dry_home="$(mktemp -d)"
           mkdir -p "$dry_home/.openclaw"
           HOME="$dry_home" \
             TOOLKIT_TARBALL_URL="file://$fixture_root/toolkit.tar.gz" \
             TOOLKIT_ALLOW_INSECURE=1 \
             ./install-skill.sh --dry-run
-          test ! -e "$dry_home/.openclaw/skills/test-fixture" \
+          test ! -e "$dry_home/.openclaw/skills" \
             || { echo "--dry-run wrote files"; exit 1; }
+
+          # Unknown skill must exit non-zero with a clear error.
+          if HOME="$home_override" \
+               TOOLKIT_TARBALL_URL="file://$fixture_root/toolkit.tar.gz" \
+               TOOLKIT_ALLOW_INSECURE=1 \
+               ./install-skill.sh nonexistent-skill 2>/dev/null; then
+            echo "FAIL: bogus skill should have failed"; exit 1
+          fi
+
+          # Path-traversal in skill name must be rejected before any fs op.
+          if HOME="$home_override" \
+               TOOLKIT_TARBALL_URL="file://$fixture_root/toolkit.tar.gz" \
+               TOOLKIT_ALLOW_INSECURE=1 \
+               ./install-skill.sh '../evil' 2>/dev/null; then
+            echo "FAIL: traversal name should have been rejected"; exit 1
+          fi
+
+          # Symlink in tarball must be rejected (M3 guard from phase-02 review).
+          mal_root="$(mktemp -d)"
+          mal_stage="$mal_root/openclaw-install-toolkit-main"
+          mkdir -p "$mal_stage/skills/evil"
+          echo "# evil" > "$mal_stage/skills/evil/SKILL.md"
+          ln -s /etc/passwd "$mal_stage/skills/evil/leak"
+          tar -czf "$mal_root/toolkit.tar.gz" -C "$mal_root" openclaw-install-toolkit-main
+          if HOME="$home_override" \
+               TOOLKIT_TARBALL_URL="file://$mal_root/toolkit.tar.gz" \
+               TOOLKIT_ALLOW_INSECURE=1 \
+               ./install-skill.sh evil 2>/dev/null; then
+            echo "FAIL: symlink tarball should have been rejected"; exit 1
+          fi

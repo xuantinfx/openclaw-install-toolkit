@@ -98,7 +98,9 @@ fetch_tarball() {
   # to http/file for local CI smoke tests only — never set in production.
   local curl_protos='=https'
   if [ -n "${TOOLKIT_ALLOW_INSECURE:-}" ]; then
-    curl_protos='=http,https,file'
+    # file:// only (for local CI fixtures); keep https in the list so a relaxed
+    # CI run that happens to hit a real URL still works.
+    curl_protos='=https,file'
   fi
   curl -fsSL --proto "$curl_protos" --tlsv1.2 --max-time 60 "$TOOLKIT_TARBALL_URL" \
     | tar -xz -C "$TMPDIR_INSTALL" \
