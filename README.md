@@ -58,10 +58,13 @@ diff before pushing; never commit secrets into a subtree-tracked skill.
 ## Requirements
 
 - macOS or Linux
-- `curl`, `jq`
 - Bash 3.2+ (stock macOS works)
+- `install.sh` needs `curl` and `jq`
+- `install-skill.sh` needs `curl` and `tar`
 
 ## Flags
+
+`install.sh`:
 
 | Flag | Default | Purpose |
 |---|---|---|
@@ -69,20 +72,30 @@ diff before pushing; never commit secrets into a subtree-tracked skill.
 | `--dry-run` | off | Validate inputs, skip installer + daemon. Useful for CI. |
 | `--help` | — | Print usage |
 
+`install-skill.sh`:
+
+| Flag | Default | Purpose |
+|---|---|---|
+| `[skill ...]` | all | Positional skill names; empty = install every skill in the tarball |
+| `--dry-run` | off | Fetch + list what would be installed; write nothing |
+| `--help` | — | Print usage |
+
 ## Environment overrides
 
-| Var | Purpose |
-|---|---|
-| `TELEGRAM_BOT_TOKEN` | Skip the token prompt (CI / re-runs) |
-| `ANTHROPIC_API_KEY` | Skip the key prompt |
-| `OPENCLAW_INSTALL_URL` | Override upstream installer URL |
-| `OPENCLAW_HOME` | Override install dir (default `~/.openclaw`) |
+| Var | Scope | Purpose |
+|---|---|---|
+| `TELEGRAM_BOT_TOKEN` | `install.sh` | Skip the token prompt (CI / re-runs) |
+| `ANTHROPIC_API_KEY` | `install.sh` | Skip the key prompt |
+| `OPENCLAW_INSTALL_URL` | `install.sh` | Override upstream installer URL |
+| `OPENCLAW_HOME` | both | Override install dir (default `~/.openclaw`) |
+| `TOOLKIT_TARBALL_URL` | `install-skill.sh` | Override toolkit tarball source (forks, private mirrors) |
+| `TOOLKIT_ALLOW_INSECURE` | `install-skill.sh` | CI-only: allow `file://` tarballs — never set in prod |
 
 ## Security note
 
 Per the installer spec, secrets are inlined in `~/.openclaw/openclaw.json` at mode `0600`. The script refuses to run inside a git worktree. Do not commit or share this file.
 
-Skills distributed via `install-skill.sh` are fetched over HTTPS (TLS 1.2+) from the public toolkit tarball. The installer rejects non-identifier skill names, multi-root tarballs, and any tarball containing symlinks, so a compromised upstream can't path-traverse into `~/.openclaw/` or smuggle `cp -R` targets. The `TOOLKIT_ALLOW_INSECURE` env var relaxes transport checks for local CI fixtures only — never set it in a real install.
+Skills distributed via `install-skill.sh` are fetched over HTTPS (TLS 1.2+) from the public toolkit tarball. The installer rejects non-identifier skill names, multi-root tarballs, and any tarball containing symlinks — so a compromised upstream can't path-traverse outside `~/.openclaw/skills/<name>/` or leak files via symlink redirection. `TOOLKIT_ALLOW_INSECURE` relaxes transport checks for local CI fixtures only — never set it in a real install.
 
 ## Design rationale
 
