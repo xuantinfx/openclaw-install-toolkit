@@ -198,7 +198,10 @@ backup_and_write_config() {
     --arg anthropicKey "$ANTHROPIC_API_KEY" \
     '{
       gateway:  { port: $port, bind: "loopback", mode: "local" },
-      agents:   { defaults: { model: { primary: $model } } },
+      agents:   {
+        defaults: { model: { primary: $model } },
+        list: [ { id: "main", tools: { profile: "full" } } ]
+      },
       channels: { telegram: { enabled: true, botToken: $botToken } },
       env:      { ANTHROPIC_API_KEY: $anthropicKey }
     }' > "$tmp" || { rm -f "$tmp"; die "failed to build openclaw.json"; }
