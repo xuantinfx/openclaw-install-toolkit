@@ -72,6 +72,17 @@ require_cmd() {
   command -v "$1" >/dev/null 2>&1 || die "missing required command: $1"
 }
 
+# Reject anything that could path-traverse or shell-surprise us.
+# Skill names must match OpenClaw's skill-id convention: lowercase alnum + `_-`.
+validate_skill_name() {
+  local name="$1"
+  case "$name" in
+    ''|.|..|*/*|*\\*|.*) die "invalid skill name: '$name'" ;;
+  esac
+  printf '%s' "$name" | grep -Eq '^[a-z0-9][a-z0-9_-]{0,63}$' \
+    || die "invalid skill name: '$name' (must match [a-z0-9][a-z0-9_-]{0,63})"
+}
+
 preflight() {
   require_cmd curl
   require_cmd tar
@@ -86,11 +97,20 @@ fetch_tarball() {
     | tar -xz -C "$TMPDIR_INSTALL" \
     || die "failed to fetch/extract toolkit tarball ($TOOLKIT_TARBALL_URL)"
 
-  # Extracted archive has a single top-level dir like openclaw-install-toolkit-main/.
-  local root
-  root="$(find "$TMPDIR_INSTALL" -mindepth 1 -maxdepth 1 -type d | head -1)"
-  [ -n "$root" ] && [ -d "$root/skills" ] \
-    || die "tarball has no skills/ directory — wrong URL?"
+  # Reject symlinks anywhere in the extracted tree — a compromised upstream
+  # could smuggle one pointing at /etc/* and `cp -R` would dereference it.
+  if find "$TMPDIR_INSTALL" -type l | read -r; then
+    die "tarball contains symlinks; refusing to install (possible tampering)"
+  fi
+
+  # Extracted archive has exactly one top-level dir (e.g., openclaw-install-toolkit-main/).
+  # Assert that instead of blindly `head -1`ing, so a reshaped tarball fails loudly.
+  local count root
+  count="$(find "$TMPDIR_INSTALL" -mindepth 1 -maxdepth 1 -type d | wc -l | tr -d ' ')"
+  [ "$count" = "1" ] \
+    || die "tarball has $count top-level directories (expected 1) — wrong URL?"
+  root="$(find "$TMPDIR_INSTALL" -mindepth 1 -maxdepth 1 -type d)"
+  [ -d "$root/skills" ] || die "tarball has no skills/ directory — wrong URL?"
   TARBALL_ROOT="$root"
 }
 
@@ -108,6 +128,7 @@ enumerate_skills() {
 
 install_one() {
   local skill="$1"
+  validate_skill_name "$skill"
   local src="$TARBALL_ROOT/skills/$skill"
   local dst="$OPENCLAW_HOME/skills/$skill"
 
