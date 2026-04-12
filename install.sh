@@ -132,11 +132,16 @@ prompt_secret() {
   if [ -n "$current" ]; then
     return 0
   fi
-  printf '%s: ' "$label" >&2
+  # Read from /dev/tty so the prompt works under `curl ... | bash`
+  # (where stdin is the download pipe, not the keyboard).
+  if [ ! -r /dev/tty ] || [ ! -w /dev/tty ]; then
+    die "$label is required but no TTY is attached. Set $var_name=... as an env var instead."
+  fi
+  printf '%s: ' "$label" >/dev/tty
   local value
   # shellcheck disable=SC2162
-  IFS= read -rs value
-  printf '\n' >&2
+  IFS= read -rs value </dev/tty
+  printf '\n' >/dev/tty
   [ -n "$value" ] || die "$label cannot be empty"
   eval "$var_name=\$value"
 }
