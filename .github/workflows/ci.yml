@@ -1,0 +1,46 @@
+name: ci
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+
+jobs:
+  lint-and-smoke:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, macos-latest]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install dependencies (ubuntu)
+        if: runner.os == 'Linux'
+        run: sudo apt-get update && sudo apt-get install -y shellcheck jq
+
+      - name: Install dependencies (macos)
+        if: runner.os == 'macOS'
+        run: brew install shellcheck jq
+
+      - name: Shellcheck
+        run: shellcheck install.sh
+
+      - name: Dry-run smoke test
+        env:
+          TELEGRAM_BOT_TOKEN: "1234567890:AABBCCDDEEFFGGHHIIJJKKLLMMNNOOPPQQRR"
+          ANTHROPIC_API_KEY: "sk-ant-fake-ci-smoke-test-key-not-real"
+        run: |
+          export OPENCLAW_HOME_OVERRIDE="$(mktemp -d)"
+          ./install.sh --port 19000 --dry-run
+          cfg="$OPENCLAW_HOME_OVERRIDE/openclaw.json"
+          test -f "$cfg" || { echo "config not written"; exit 1; }
+          jq -e '.gateway.port == 19000' "$cfg"
+          jq -e '.gateway.bind == "loopback"' "$cfg"
+          jq -e '.gateway.mode == "local"' "$cfg"
+          jq -e '.agents.defaults.model.primary == "anthropic/claude-sonnet-4-6"' "$cfg"
+          jq -e '.channels.telegram.enabled == true' "$cfg"
+          jq -e '.channels.telegram.botToken == env.TELEGRAM_BOT_TOKEN' "$cfg"
+          jq -e '.env.ANTHROPIC_API_KEY == env.ANTHROPIC_API_KEY' "$cfg"
+          perms="$(stat -c '%a' "$cfg" 2>/dev/null || stat -f '%Lp' "$cfg")"
+          test "$perms" = "600" || { echo "expected 0600, got $perms"; exit 1; }
