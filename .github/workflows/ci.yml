@@ -44,3 +44,43 @@ jobs:
           jq -e '.env.ANTHROPIC_API_KEY == env.ANTHROPIC_API_KEY' "$cfg"
           perms="$(stat -c '%a' "$cfg" 2>/dev/null || stat -f '%Lp' "$cfg")"
           test "$perms" = "600" || { echo "expected 0600, got $perms"; exit 1; }
+
+      - name: install-skill.sh smoke test
+        run: |
+          set -euo pipefail
+          # Build a fixture tarball that mimics the GitHub archive layout:
+          # a single top-level dir containing skills/<name>/SKILL.md.
+          fixture_root="$(mktemp -d)"
+          stage="$fixture_root/openclaw-install-toolkit-main"
+          mkdir -p "$stage/skills/test-fixture"
+          echo "# Test Fixture Skill" > "$stage/skills/test-fixture/SKILL.md"
+          tar -czf "$fixture_root/toolkit.tar.gz" -C "$fixture_root" openclaw-install-toolkit-main
+
+          # Install into an ephemeral $HOME so we don't touch the runner state.
+          home_override="$(mktemp -d)"
+          mkdir -p "$home_override/.openclaw"
+
+          HOME="$home_override" \
+            TOOLKIT_TARBALL_URL="file://$fixture_root/toolkit.tar.gz" \
+            TOOLKIT_ALLOW_INSECURE=1 \
+            ./install-skill.sh test-fixture
+
+          installed="$home_override/.openclaw/skills/test-fixture/SKILL.md"
+          test -f "$installed" || { echo "skill not installed at $installed"; exit 1; }
+          grep -q "Test Fixture Skill" "$installed"
+
+          # Idempotency: second run must succeed too.
+          HOME="$home_override" \
+            TOOLKIT_TARBALL_URL="file://$fixture_root/toolkit.tar.gz" \
+            TOOLKIT_ALLOW_INSECURE=1 \
+            ./install-skill.sh test-fixture
+
+          # --dry-run must not write anything new.
+          dry_home="$(mktemp -d)"
+          mkdir -p "$dry_home/.openclaw"
+          HOME="$dry_home" \
+            TOOLKIT_TARBALL_URL="file://$fixture_root/toolkit.tar.gz" \
+            TOOLKIT_ALLOW_INSECURE=1 \
+            ./install-skill.sh --dry-run
+          test ! -e "$dry_home/.openclaw/skills/test-fixture" \
+            || { echo "--dry-run wrote files"; exit 1; }

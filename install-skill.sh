@@ -40,8 +40,9 @@ Options:
   --help, -h     Show this message
 
 Environment:
-  OPENCLAW_HOME         Override install root (default: $HOME/.openclaw)
-  TOOLKIT_TARBALL_URL   Override tarball source (default: public toolkit main)
+  OPENCLAW_HOME            Override install root (default: $HOME/.openclaw)
+  TOOLKIT_TARBALL_URL      Override tarball source (default: public toolkit main)
+  TOOLKIT_ALLOW_INSECURE   CI-only: allow http/file tarball URLs (never in prod)
 
 Notes:
   - Any existing ~/.openclaw/skills/<name>/ is replaced wholesale.
@@ -93,7 +94,13 @@ preflight() {
 fetch_tarball() {
   TMPDIR_INSTALL="$(mktemp -d 2>/dev/null || mktemp -d -t openclaw-skill)"
   printf '[fetch] %s\n' "$TOOLKIT_TARBALL_URL" >&2
-  curl -fsSL --proto '=https' --tlsv1.2 --max-time 60 "$TOOLKIT_TARBALL_URL" \
+  # Lock transport to HTTPS+TLS1.2. `TOOLKIT_ALLOW_INSECURE=1` relaxes this
+  # to http/file for local CI smoke tests only — never set in production.
+  local curl_protos='=https'
+  if [ -n "${TOOLKIT_ALLOW_INSECURE:-}" ]; then
+    curl_protos='=http,https,file'
+  fi
+  curl -fsSL --proto "$curl_protos" --tlsv1.2 --max-time 60 "$TOOLKIT_TARBALL_URL" \
     | tar -xz -C "$TMPDIR_INSTALL" \
     || die "failed to fetch/extract toolkit tarball ($TOOLKIT_TARBALL_URL)"
 
