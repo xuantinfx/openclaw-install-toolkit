@@ -57,10 +57,17 @@ target=$1
 # Read the map. Skip blank lines and lines starting with '#'.
 # NOTE: bash 3.2 compatible — no mapfile, no associative arrays.
 found=0
-while IFS=$'\t' read -r name url branch; do
+lineno=0
+# `|| [ -n "$name" ]` catches a final row without a trailing newline.
+while IFS=$'\t' read -r name url branch || [ -n "${name:-}" ]; do
+  lineno=$((lineno + 1))
   case "$name" in
     ''|\#*) continue ;;
   esac
+  if [ -z "${url:-}" ] || [ -z "${branch:-}" ]; then
+    echo "error: $MAP_FILE line $lineno: malformed row for '$name' (expected: name<TAB>url<TAB>branch)" >&2
+    exit 1
+  fi
   if [ "$target" = "--all" ] || [ "$target" = "$name" ]; then
     sync_one "$name" "$url" "$branch"
     found=1
