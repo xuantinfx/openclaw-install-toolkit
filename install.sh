@@ -298,6 +298,68 @@ verify_anthropic() {
   fi
 }
 
+ensure_openclaw_on_path() {
+  local bin_dir="$OPENCLAW_HOME/bin"
+  [ -x "$bin_dir/openclaw" ] || return 0
+
+  # Opt-out for users managing dotfiles themselves (chezmoi, stow, nix, etc.)
+  if [ "${OPENCLAW_NO_RC_EDIT:-0}" = "1" ]; then
+    printf '[install] OPENCLAW_NO_RC_EDIT=1 — skipping shell rc edit.\n' >&2
+    # shellcheck disable=SC2016
+    printf '[install] add manually: export PATH="%s:$PATH"\n' "$bin_dir" >&2
+    return 0
+  fi
+
+  # The line we append. When OPENCLAW_HOME is the default, use literal $HOME
+  # so the rc file stays portable across home-directory renames. The single
+  # quotes are intentional — $HOME and $PATH must be written literally so
+  # they expand at rc-read time, not now.
+  local line
+  if [ "$OPENCLAW_HOME" = "$HOME/.openclaw" ]; then
+    # shellcheck disable=SC2016
+    line='export PATH="$HOME/.openclaw/bin:$PATH"'
+  else
+    line="export PATH=\"$bin_dir:\$PATH\""
+  fi
+
+  # Pick rc file strictly based on login shell. Only zsh and bash get
+  # automatic edits — everything else (fish, ksh, sh, nushell, …) gets a
+  # manual instruction so we don't silently write to a file the user's
+  # shell never sources.
+  local rc
+  case "${SHELL:-}" in
+    */zsh|zsh)    rc="$HOME/.zshrc" ;;
+    */bash|bash)  rc="$HOME/.bash_profile" ;;
+    *)
+      printf '[install] unrecognized shell (SHELL=%s) — not editing rc files.\n' "${SHELL:-<unset>}" >&2
+      printf '[install] add this to your shell'"'"'s startup file manually:\n' >&2
+      # shellcheck disable=SC2016
+      printf '[install]     export PATH="%s:$PATH"\n' "$bin_dir" >&2
+      return 0
+      ;;
+  esac
+
+  # Ensure rc file exists (create empty if missing); skip if we can't write.
+  [ -e "$rc" ] || : > "$rc" || { printf '[install] could not create %s — skipping\n' "$rc" >&2; return 0; }
+
+  if grep -qxF "$line" "$rc" 2>/dev/null; then
+    return 0   # already present, leave alone
+  fi
+  printf '\n# Added by openclaw-install-toolkit\n%s\n' "$line" >> "$rc" || {
+    printf '[install] could not write to %s — skipping\n' "$rc" >&2
+    return 0
+  }
+  printf '[install] appended PATH export to %s\n' "$rc" >&2
+
+  # Make openclaw callable in THIS terminal session too (best-effort; the
+  # parent shell that ran `curl | bash` is unreachable, but any downstream
+  # `openclaw` call inside this script works because run_official_installer
+  # already amended PATH).
+  printf '[install] run this in your current Terminal to use openclaw now:\n' >&2
+  printf '[install]     source %s\n' "$rc" >&2
+  printf '[install] (new Terminal windows will pick it up automatically)\n' >&2
+}
+
 on_success() {
   printf '\n'
   printf '  [OK] gateway healthy on 127.0.0.1:%s\n' "$PORT"
@@ -321,6 +383,7 @@ main() {
     printf '[dry-run] skipping official installer\n' >&2
   else
     run_official_installer
+    ensure_openclaw_on_path
   fi
   backup_and_write_config
   if [ "$DRY_RUN" -eq 1 ]; then
