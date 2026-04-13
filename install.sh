@@ -140,7 +140,7 @@ prompt_secret() {
   printf '%s: ' "$label" >/dev/tty
   local value
   # shellcheck disable=SC2162
-  IFS= read -rs value </dev/tty
+  IFS= read -r value </dev/tty
   printf '\n' >/dev/tty
   [ -n "$value" ] || die "$label cannot be empty"
   eval "$var_name=\$value"
