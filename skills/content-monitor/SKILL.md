@@ -1,232 +1,140 @@
 ---
 name: content-monitor
 description: >
-  Monitor competitor websites (personal injury law CA/NV + mortgage/HEI), suggest unique daily
-  content topics, generate standalone Facebook and X/Twitter posts (no links), and generate
-  photorealistic images via Google Gemini API (Nano Banana 2 / Imagen 4). Prevents content
-  duplication with 30-day rolling calendar. IMPORTANT: On first use or when user asks to set up,
-  you MUST read prompts/setup-wizard.md and follow ALL steps in order — do NOT improvise your
-  own setup flow. The wizard covers: websites, social media login via browser, sample posts,
-  weekly themes, API keys, domain, and cron schedule (via CronCreate tool, NOT LaunchAgent).
-  Trigger phrases: "suggest today's content", "generate social post", "crawl sites",
-  "content calendar", "what should I post today", "morning briefing", "run content pipeline",
-  "generate image", "setup content monitor", "configure content pipeline", "set up posting".
+  Monitor competitor websites, suggest daily content, generate Facebook + X posts with images.
+  TWO MANDATORY FLOWS — agent must follow exactly:
+  (1) SETUP: On first use or "setup content monitor" → read AND follow prompts/setup-wizard.md 
+  (2) POSTING: On "run content pipeline" or daily cron → read AND follow prompts/posting-flow.md
+  Never improvise. Never go silent. Never use LaunchAgent. Always confirm each step with user.
+  Trigger: "setup content monitor", "run content pipeline", "what should I post today",
+  "morning briefing", "suggest today's content", "crawl sites", "content calendar".
 ---
 
 # Content Monitor Skill
 
-Full content pipeline: crawl 56 competitor sites → suggest unique daily topics → generate Facebook + X posts (no links) → generate photorealistic image via Google Gemini → morning briefing for human review.
+## ⚠️ AGENT: READ THIS FIRST
+
+**Before doing ANYTHING, determine which flow applies:**
+
+### Flow A: First-Time Setup
+**Trigger**: first use, "setup content monitor", "configure content pipeline", "set up posting", or `~/.openclaw/workspace/.env-content-monitor` does not exist.
+
+**Action**: READ the file `prompts/setup-wizard.md` and follow it step by step.
+
+Quick reference (but you MUST read the prompt file for full instructions):
+
+```
+Step 1/7: Welcome → list 7 steps → WAIT for user to say "ready"
+Step 2/7: Competitor websites → ask URLs or "use defaults" → confirm → WAIT
+Step 3/7: Social media login → open Facebook in browser → WAIT for login → open X → WAIT → confirm → WAIT
+Step 4/7: Writing style → ask for sample posts or skip → confirm → WAIT
+Step 5/7: Weekly themes → show schedule → ask customize or keep defaults → confirm → WAIT
+Step 6/7: API keys → ask Firecrawl key → WAIT → ask Google AI key → WAIT → ask Brave key → WAIT → save → confirm → WAIT
+Step 7/7: Domain + Cron → ask domain → ask time → use CronCreate tool (NOT LaunchAgent) → confirm
+Final: Init workspace → show summary → ask "want to run pipeline now?"
+```
+
+**Rules**: After EVERY step → confirm what was done → ask "Continue?" → WAIT for user.
+
+### Flow B: Daily Posting
+**Trigger**: "run content pipeline", "what should I post today", "morning briefing", daily cron.
+
+**Action**: READ the file `prompts/posting-flow.md` and follow it step by step.
+
+Quick reference (but you MUST read the prompt file for full instructions):
+
+```
+Step 1: Run pipeline scripts → show briefing with candidates → WAIT for user to pick
+Step 2: Generate image → show post text + image → WAIT for user approval
+Step 3: User says "approve" → proceed | "edit X" → edit and re-show | "skip" → cancel
+Step 4: Approve post + prepare auto-post instructions
+Step 5: Post to Facebook via browser → confirm success/failure → WAIT if failed
+Step 6: Post to X via browser → confirm success/failure → WAIT if failed
+Step 7: Archive to published/ → show final summary → suggest what's next
+```
+
+**Rules**: After EVERY step → confirm what was done → guide to next step → NEVER go silent.
+
+### Flow C: Ad-hoc Commands
+For other requests (crawl sites, content calendar, etc.) — see sections below.
+
+---
 
 ## Scope
 
-- **Facebook post** — standalone, no links, value-first content
+- **Facebook post** — standalone, no links, value-first content, max 400 words
 - **X/Twitter post** — standalone, no links, ≤280 chars
-- **Photorealistic image** — generated via Google Nano Banana 2 / Imagen 4 (never illustrations/symbols)
+- **Photorealistic image** — generated via Google Nano Banana 2 / Imagen 4
 - **No blog, no URLs in posts**
 
 ## API Keys Required
 
 | Key | Purpose | Required? |
 |---|---|---|
-| `FIRECRAWL_API_KEY` | Crawl competitor sites | ✅ Yes |
-| `GOOGLE_AI_API_KEY` | Generate images (Nano Banana 2 / Imagen 4) | ✅ Yes |
+| `FIRECRAWL_API_KEY` | Crawl competitor sites | Yes |
+| `GOOGLE_AI_API_KEY` | Generate images (Nano Banana 2 / Imagen 4) | Yes |
 | `BRAVE_API_KEY` | Industry news enrichment | Optional |
 
-## Prerequisites
-
-- Python 3.9+
-- Scripts: `skills/content-monitor/scripts/`
-- Site list: `skills/content-monitor/references/sites.md`
-- Content themes: `skills/content-monitor/references/themes.md`
-
-## First-Time Setup
-
-**CRITICAL**: On first use, or when the user says "setup content monitor" / "configure content pipeline" / "set up posting":
-
-1. **READ `prompts/setup-wizard.md` FIRST** — this file contains the exact step-by-step setup flow
-2. **Follow ALL steps in order** — do NOT skip steps or improvise your own setup flow
-3. **Do NOT use LaunchAgent, crontab, or other OS-level scheduling** — use the CronCreate tool only
-4. **Do NOT finish setup without completing ALL steps**:
-   - Step 1: Welcome
-   - Step 2: Competitor websites
-   - Step 3: Social media login (Facebook + X via Playwright browser)
-   - Step 4: Sample posts / writing style
-   - Step 5: Weekly content themes
-   - Step 6: **API keys** (Firecrawl, Google AI, Brave) — saved to `~/.openclaw/workspace/.env-content-monitor`
-   - Step 7: Website domain
-   - Step 8: **Cron schedule** via CronCreate tool
-   - Step 9: Initialize workspace
-   - Step 10: Show summary
-
-**The setup wizard prompt is the source of truth. Read it. Follow it. Do not improvise.**
-
-See also:
-- [QUICKSTART.md](QUICKSTART.md) — Quick start guide
-- [TOKEN-SETUP.md](TOKEN-SETUP.md) — How to get API keys (Gemini, Firecrawl, Brave)
+Stored in: `~/.openclaw/workspace/.env-content-monitor`
 
 ## Workspace Structure
 
 ```
-workspace/
-├── sites/
-│   ├── personal-injury/
-│   │   ├── *.md              ← competitor content (raw markdown)
-│   │   └── .topics/*.json    ← extracted topics per domain (auto by crawl.py)
-│   └── mortgage/
-│       ├── *.md
-│       └── .topics/*.json
-├── news/                     ← industry news cache by date+theme (.json + .md)
+~/.openclaw/workspace/
+├── sites/{personal-injury,mortgage}/    ← scraped competitor content + .topics/
+├── news/                                ← industry news cache
 ├── posts/
-│   ├── drafts/               ← awaiting review
-│   ├── images/               ← Google Gemini generated images
-│   ├── approved/             ← reviewed, ready to post (+ AUTO-POST-INSTRUCTIONS.md)
-│   └── published/            ← posted
-├── content-calendar.json     ← 30-day topic history (no duplicates)
-├── crawl-state.json          ← last crawl timestamps per site
-└── skills/content-monitor/scripts/
-    ├── crawl.py              ← Firecrawl scraper + topic extraction
-    ├── news_fetch.py         ← Brave Search news (auto mode for daily pipeline)
-    ├── suggest_daily.py      ← dynamic topic generation from news + competitor data
-    ├── social_draft.py       ← Facebook + X drafts, varied structure, human tone
-    ├── generate_image.py     ← Google Gemini image generator
-    ├── approve_post.py       ← approve + optional auto-post trigger
-    └── auto_post.py          ← generate browser posting instructions (CDP relay)
-skills/content-monitor/prompts/
-    └── setup-wizard.md       ← agent-driven first-time setup (conversational)
-skills/content-monitor/references/
-    ├── sites.md              ← monitored competitor sites
-    ├── themes.md             ← weekly theme rotation + style guidelines
-    ├── sample-posts.md       ← user-provided sample posts (from wizard)
-    └── writing-style.md      ← AI-generated writing style guide (from samples)
+│   ├── drafts/                          ← awaiting review
+│   ├── images/                          ← generated images
+│   ├── approved/                        ← reviewed, ready to post
+│   └── published/                       ← archive
+├── content-calendar.json                ← 30-day topic tracker
+├── crawl-state.json                     ← crawl timestamps
+└── .env-content-monitor                 ← API keys (chmod 600)
+
+skills/content-monitor/
+├── prompts/
+│   ├── setup-wizard.md                  ← MANDATORY: setup flow
+│   └── posting-flow.md                 ← MANDATORY: posting flow
+├── scripts/
+│   ├── crawl.py                         ← Firecrawl scraper
+│   ├── news_fetch.py                    ← Brave Search news
+│   ├── suggest_daily.py                 ← topic generation
+│   ├── social_draft.py                  ← content brief builder
+│   ├── generate_image.py                ← Google Gemini image gen
+│   ├── approve_post.py                  ← approve + auto-post
+│   ├── auto_post.py                     ← browser posting instructions
+│   └── setup_wizard.py                  ← utility CLI (used by agent)
+└── references/
+    ├── sites.md                         ← monitored sites
+    ├── themes.md                        ← theme rotation + style
+    ├── theme-schedule.json              ← custom weekly schedule
+    ├── sample-posts.md                  ← user sample posts
+    └── writing-style.md                 ← AI-generated style guide
 ```
-
-## Daily Workflow
-
-### Automated (7:00 AM Asia/Saigon via cron)
-1. `news_fetch.py --auto` — fetch today's trending news (Brave Search)
-2. `suggest_daily.py --record` — generate 3-5 topic candidates from news + competitor data
-3. `social_draft.py --from-calendar` — generate Facebook + X drafts
-4. **Send briefing** (text only — no image yet): show candidates with source type (news/competitor/evergreen)
-5. **Wait for user to pick** which post(s) to use
-
-### After user picks a post
-1. `generate_image.py --draft <path>` — generate image for selected post only
-2. **Send image to Telegram** via `openclaw message send --channel telegram --target 1745276153 --media <image_path> --message "<caption>"`
-3. Show full post text (Facebook + X) to user for approval
-4. On approval: `approve_post.py --draft <path> --auto-post` — moves to approved/ AND generates browser instructions
-5. Agent reads `AUTO-POST-INSTRUCTIONS.md` and executes via browser CDP relay:
-   - Opens Facebook → fills post + uploads image → clicks Post
-   - Opens X → fills post + uploads image → clicks Post
-6. After both posts published: `approve_post.py --publish <folder>` — moves to `posts/published/`
-
-### Auto-post via browser relay
-```bash
-# Approve + generate posting instructions (agent executes via CDP)
-python3 approve_post.py --draft <path> --auto-post
-
-# Preview only (fill content but don't click publish)
-python3 approve_post.py --draft <path> --auto-post --dry-run
-
-# Generate instructions for a specific platform
-python3 auto_post.py --draft <path> --facebook-only
-python3 auto_post.py --draft <path> --x-only
-```
-
-**Requires**: OpenClaw Chrome browser relay active, Facebook + X logged in within the OpenClaw Chrome profile.
-
-### Manual run
-```bash
-python3 skills/content-monitor/scripts/news_fetch.py --auto
-python3 skills/content-monitor/scripts/suggest_daily.py --record
-python3 skills/content-monitor/scripts/social_draft.py --from-calendar
-GOOGLE_AI_API_KEY=<key> python3 skills/content-monitor/scripts/generate_image.py --draft posts/drafts/<category>/<slug>-<date>.md
-```
-
-### Manual run
-```bash
-python3 skills/content-monitor/scripts/news_fetch.py --auto
-python3 skills/content-monitor/scripts/suggest_daily.py --record
-python3 skills/content-monitor/scripts/social_draft.py --from-calendar
-```
-
-### Crawl competitor sites (weekly)
-```bash
-FIRECRAWL_API_KEY=<key> python3 skills/content-monitor/scripts/crawl.py --schedule
-# First-time full crawl:
-FIRECRAWL_API_KEY=<key> python3 skills/content-monitor/scripts/crawl.py --schedule --force
-```
-
-## Morning Briefing Format
-
-```
-Good morning! Here are today's [DATE] content candidates:
-
-Post 1 — [CATEGORY] | [THEME] | Source: [news/competitor/evergreen]
-Title: [TITLE]
-[Facebook post preview — first 200 chars]
----
-X: [X post]
-
-Post 2 — [CATEGORY] | [THEME] | Source: [news/competitor/evergreen]
-Title: [TITLE]
-[Facebook post preview — first 200 chars]
----
-X: [X post]
-
-Post 3 — ...
-
-Which post do you want to use today? I will generate the image after you choose.
-Reply with the number, or "approve [number]" to auto-post directly.
-```
-
-## When User Picks a Post (After Morning Briefing)
-
-1. Generate image: `generate_image.py --draft <path>`
-2. **Send image directly to Telegram:**
-   ```bash
-   openclaw message send --channel telegram --target 1745276153 \
-     --media <image_path> \
-     --message "📸 [Post Title] — ready for review"
-   ```
-3. Then send the full post text (Facebook + X) as a separate message
-4. On user saying "approve": `approve_post.py --draft <path>` moves both draft + image to `posts/approved/YYYY-MM-DD-HHMM/`
-5. After user posts manually: `approve_post.py --publish posts/approved/YYYY-MM-DD-HHMM/`
 
 ## Post Guidelines
 
 **Facebook:**
 - No links, no URLs anywhere
-- Max 400 words
-- Human tone — write like a knowledgeable professional, not a marketing bot
-- Varied structure (story, stat, question, myth, news angle, direct — rotated automatically)
-- Max 1 emoji (at the start, optional) — NO emoji as bullet points
-- End with max 3 hashtags on the last line
-- No checkmark bullets, no generic CTAs
+- Max 400 words, human tone
+- Varied structure (story, stat, question, myth, news angle, direct)
+- Max 1 emoji (at start, optional), NO emoji as bullets
+- Max 3 hashtags on last line
 
 **X/Twitter:**
-- No links, no URLs
-- Max 280 characters
+- No links, no URLs, max 280 characters
 - Punchy, direct, one strong idea
-- Max 2 hashtags
-- No emoji
+- Max 2 hashtags, no emoji
 
 **Images (Google Gemini):**
-- Always photorealistic — NEVER illustration, cartoon, symbol, icon
-- Output: 1080×1080px (1:1) — optimal for Facebook + X
-- Primary: Nano Banana 2 (~$0.12/img, best quality)
-- Fallback: Imagen 4 ($0.03/img) → Imagen 4 Fast ($0.02/img)
-
-| Theme | Visual |
-|---|---|
-| FAQ | Attorney consulting client, warm office |
-| Know Your Rights | Confident attorney, law office |
-| Case Story | Cinematic — accident scene or courthouse |
-| HEI Education | Happy homeowner couple, suburban home |
-| Market News | Real estate, neighborhood aerial |
-| Tips | Financial advisor + homeowner |
-| Industry News | Boardroom meeting, professionals |
+- Always photorealistic (NEVER illustration/cartoon)
+- 1080×1080px, wide/mid shots only
+- Primary: Nano Banana 2 (~$0.12/img) → Fallback: Imagen 4 ($0.03/img)
 
 ## Weekly Theme Rotation
+
+Configurable via `references/theme-schedule.json`. Default:
 
 | Day | Category | Theme |
 |---|---|---|
@@ -241,50 +149,51 @@ Reply with the number, or "approve [number]" to auto-post directly.
 ## Ad-hoc Commands
 
 ```bash
-# View 30-day content history
+# View content history
 python3 suggest_daily.py --history
 
-# Generate draft for a custom topic
+# Generate draft for custom topic
 python3 social_draft.py --topic "What is shared equity?" --category mortgage --theme hei_education
-
-# Generate image for a specific draft
-GOOGLE_AI_API_KEY=<key> python3 generate_image.py --draft posts/drafts/personal-injury/slug-date.md
-
-# Custom image prompt
-GOOGLE_AI_API_KEY=<key> python3 generate_image.py --prompt "Attorney reviewing case files" --slug my-post --category personal-injury --theme faq
 
 # Crawl single site
 FIRECRAWL_API_KEY=<key> python3 crawl.py --url https://www.sweetjames.com
 
+# Crawl all sites on schedule
+FIRECRAWL_API_KEY=<key> python3 crawl.py --schedule
+
 # Fetch industry news
 BRAVE_API_KEY=<key> python3 news_fetch.py --topic "home equity investment California 2025"
+
+# Generate image with custom prompt
+GOOGLE_AI_API_KEY=<key> python3 generate_image.py --prompt "Attorney reviewing case files" --slug my-post
 ```
 
 ## Key Rules
 
-- **No links/URLs in posts** — Facebook and X are fully standalone
-- **No image scraping** — all images generated by Google Gemini (copyright safe)
+- **No links/URLs in posts** — Facebook and X are standalone
 - **No duplicate topics** within 30 days — enforced by content-calendar.json
-- **Drafts only** — human approves before any post goes live
-- **English only** for all content
-- **Always photorealistic images** — wide/mid shots only, no close-up faces
-- **Human tone** — no emoji bullets, max 3 hashtags, varied post structures
-- **News first** — `news_fetch.py --auto` runs before topic suggestion every day
-- **Auto-post via browser relay** — after approval, agent posts to Facebook + X via CDP
+- **Human approves before any post goes live**
+- **Always photorealistic images** — no illustrations, no close-up faces
+- **Human tone** — no emoji bullets, no generic CTAs
+- **News first** — fetch news before generating suggestions
 - Firecrawl: free=500 credits/month, paid=3K/month ($16)
-- Google AI: billing required — Nano Banana 2 ~$0.12/img, Imagen 4 $0.03/img
+- Google AI: billing required — ~$0.03-0.12/img
 
 ## Troubleshooting
 
 | Issue | Fix |
 |---|---|
-| No suggestions today | Run `news_fetch.py --auto` then `suggest_daily.py --record` |
-| Topics too generic | Check `sites/{category}/.topics/` — run `crawl.py --schedule` if empty |
-| All topics used | Auto-resets after 30 days; add more competitor sites to expand pool |
+| No suggestions | Run `news_fetch.py --auto` then `suggest_daily.py --record` |
 | Image generation fails | Check `GOOGLE_AI_API_KEY` and billing at aistudio.google.com |
-| `content-calendar.json` missing | Created automatically on first `--record` run |
-| Firecrawl rate limit | Use `--url` for single sites; avoid daily `--force` |
-| News not in draft | Ensure `news_fetch.py --auto` runs before `social_draft.py` |
-| Auto-post fails | Check Chrome relay is active + logged in to Facebook/X |
-| X image upload fails (element ref changes) | Use `evaluate` workaround: run `openclaw browser evaluate 'document.querySelector("input[data-testid=\"fileInput\"]").click()'` then immediately `openclaw browser upload <file>` — do NOT click the camera icon first |
-| Posts still have emoji spam | Check `references/themes.md` for updated style guidelines |
+| Auto-post fails | Check browser has Facebook/X logged in |
+| Facebook image upload stuck / Finder dialog open | NEVER click "Photo/video" button. Use hidden file input: `browser_evaluate('document.querySelector("input[type=file]").click()')` then `browser_file_upload`. Press Escape if dialog stuck. |
+| X image upload fails | Use evaluate workaround — see `auto_post.py` |
+| Duplicate topics | Auto-resets after 30 days |
+
+## Documentation
+
+- [README.md](README.md) — Beginner guide
+- [QUICKSTART.md](QUICKSTART.md) — Quick reference
+- [TOKEN-SETUP.md](TOKEN-SETUP.md) — How to get API keys
+- [SETUP.md](SETUP.md) — Manual installation
+- [WORKFLOW.md](WORKFLOW.md) — Detailed pipeline reference

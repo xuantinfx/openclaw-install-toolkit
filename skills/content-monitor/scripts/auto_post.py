@@ -142,9 +142,15 @@ def generate_agent_instructions(draft: dict, dry_run: bool = False,
         instructions.append("")
 
         if draft["image_path"]:
-            instructions.append(f"7. Click the \"Photo/video\" button in the post editor")
-            instructions.append(f"8. Upload the image file: `{draft['image_path']}`")
-            instructions.append(f"9. Wait for the image upload to complete")
+            img = draft['image_path']
+            instructions.append("7. Upload the image using the hidden file input (do NOT click 'Photo/video' button — it opens Finder which cannot be automated):")
+            instructions.append(f"   a. Run browser_evaluate: `document.querySelector('input[type=\"file\"][accept*=\"image\"]').click()`")
+            instructions.append(f"      This triggers the hidden file input without opening the Finder dialog visually.")
+            instructions.append(f"   b. Immediately run browser_file_upload with the file: `{img}`")
+            instructions.append(f"      This intercepts the file chooser and selects the image.")
+            instructions.append("   c. If the above selector doesn't work, try: `document.querySelector('form input[type=\"file\"]').click()`")
+            instructions.append("   d. Wait for the image thumbnail to appear in the post composer (2-3 seconds)")
+            instructions.append("   e. If a Finder/file dialog is stuck open, press Escape to close it before continuing")
 
         if dry_run:
             instructions.append("")
