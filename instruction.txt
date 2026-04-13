@@ -1,47 +1,183 @@
-OpenClaw — Full Setup Guide
-===========================
+How to set up your OpenClaw AI assistant on Telegram
+====================================================
 
-1. Install OpenClaw
-   Run the installer in your terminal:
+Hi! This guide helps you set up your own AI helper that you can chat with
+inside Telegram. No coding background needed. Just follow each step in order.
 
-       curl -fsSL "https://raw.githubusercontent.com/xuantinfx/openclaw-install-toolkit/main/install.sh?$(date +%s)" | bash
+You will use:
+  - Terminal on your Mac (the black window for typing commands — comes built in)
+  - Telegram, on whichever device you already use it on
+      (phone, tablet, desktop, or telegram.org in a browser — all work the same)
 
-2. Provide credentials
-   When prompted, paste:
-     - your Telegram bot token
-     - your Anthropic API key
+The whole setup takes about 10-15 minutes.
 
-3. Pair your Telegram account
-   Open Telegram and send any message to your bot. It will reply with
-   something like:
 
-       OpenClaw: access not configured.
-       Your Telegram user id: 1048152213
-       Pairing code: 6P25BBXP
+BEFORE YOU START — get these two things ready
+---------------------------------------------
 
-       Ask the bot owner to approve with:
-       openclaw pairing approve telegram 6P25BBXP
+You'll need:
 
-4. Approve the pairing
-   Copy the "openclaw pairing approve telegram <code>" line from the bot's
-   reply and run it in your terminal.
+A) A Telegram bot token
+   This is a password-like code that lets your computer talk to a Telegram bot.
 
-5. Install the skills bundle
-   Run:
+   How to get one:
+   1. Open Telegram (on your phone, desktop, or telegram.org — any of them).
+   2. In the search bar, type  BotFather  and open the official account
+      (blue checkmark next to the name).
+   3. Send it the message:  /newbot
+   4. It will ask for a name and a username for your bot. Pick anything you like.
+      (The username must end in "bot", e.g. "myhelperbot".)
+   5. BotFather will send you back a long code that looks like:
+        1234567890:ABCdefGHIjklmnoPQRstuvWXYz-1234567890
+      That is your bot token. Copy it somewhere safe — you'll paste it later.
 
-       curl -fsSL "https://raw.githubusercontent.com/xuantinfx/openclaw-install-toolkit/main/install-skill.sh?$(date +%s)" | bash
+B) An Anthropic API key
+   This is the key that lets your assistant use Claude (the AI brain).
 
-6. Configure the content monitor
-   In Telegram, message your bot:
+   How to get one:
+   1. Go to:  https://console.anthropic.com
+   2. Sign up or log in.
+   3. Add a payment method (Anthropic charges per use — usually a few cents).
+   4. Click "API Keys" in the menu, then "Create Key".
+   5. Copy the key it shows you. It starts with  sk-ant-...
+      Save it somewhere safe — you can't see it again after closing the page.
 
-       setup content monitor
+Got both? Great. Let's install.
 
-7. Complete the setup
-   Follow the steps the assistant walks you through in chat.
 
-8. Verify it works
-   In Telegram, message your bot:
+STEP 1 — Open Terminal
+----------------------
 
-       manual test run
+On your Mac:
+  - Press Command + Space (opens Spotlight search).
+  - Type:  Terminal
+  - Press Enter.
 
-   You should see the monitor execute and return its result.
+A window with text will open. This is where you'll paste the commands below.
+
+
+STEP 2 — Install OpenClaw
+-------------------------
+
+Copy this whole line, paste it into Terminal, and press Enter:
+
+    curl -fsSL "https://raw.githubusercontent.com/xuantinfx/openclaw-install-toolkit/main/install.sh?$(date +%s)" | bash
+
+It will download and start the installer. You'll see messages scroll by — that's normal.
+
+After a moment it will stop and ask you two questions:
+
+  Telegram bot token:
+      Paste the long code from BotFather and press Enter.
+
+  Anthropic API key:
+      Paste the key that starts with sk-ant-... and press Enter.
+
+Wait for it to finish. When it's done you'll see a success message.
+
+
+STEP 3 — Say hi to your bot
+---------------------------
+
+  1. Open Telegram on whichever device is easiest for you (phone is fine).
+  2. In the search bar, type the bot username you chose with BotFather,
+     and tap your bot.
+  3. Tap "Start" at the bottom, or just send it the message:  hi
+
+The bot will reply with something that looks like this:
+
+    OpenClaw: access not configured.
+    Your Telegram user id: 1048152213
+    Pairing code: 6P25BBXP
+
+    Ask the bot owner to approve with:
+    openclaw pairing approve telegram 6P25BBXP
+
+Don't worry — this is expected. It's asking you to prove you're the owner.
+
+
+STEP 4 — Approve yourself
+-------------------------
+
+From the bot's message, copy the line that starts with:
+
+    openclaw pairing approve telegram ...
+
+(Your code will be different from the example.)
+
+Go back to Terminal, paste that line, and press Enter. It will confirm
+that you're approved.
+
+Now your Telegram bot is connected to the AI. Try sending it a message
+like "hello" — it should reply like a chat assistant.
+
+
+STEP 5 — Install the skills (extra abilities)
+---------------------------------------------
+
+Skills give your assistant special powers — like monitoring websites.
+
+In Terminal, paste this line and press Enter:
+
+    curl -fsSL "https://raw.githubusercontent.com/xuantinfx/openclaw-install-toolkit/main/install-skill.sh?$(date +%s)" | bash
+
+Wait for it to finish.
+
+
+STEP 6 — Set up the content monitor
+-----------------------------------
+
+Go back to Telegram and send this message to your bot:
+
+    setup content monitor
+
+The bot will start walking you through the setup by asking questions.
+
+
+STEP 7 — Follow the bot's instructions
+--------------------------------------
+
+Just answer the bot's questions in Telegram. It will tell you what to
+enter at each step. Take your time — if you're unsure, you can ask the
+bot to explain.
+
+
+STEP 8 — Test that it works
+---------------------------
+
+When setup is finished, send your bot this message:
+
+    manual test run
+
+You should see the monitor run and report back what it found. Done!
+
+
+TROUBLESHOOTING
+---------------
+
+"command not found" when pasting a command
+  → Make sure you copied the whole line with no extra spaces.
+  → Try closing Terminal and opening a fresh one.
+
+The bot doesn't reply
+  → Make sure you completed Step 4 (approval).
+  → Check that you're messaging the right bot (the one you made with BotFather).
+
+"invalid Telegram bot token format"
+  → The token should look like  123456789:AA... (a number, a colon, then letters/numbers).
+  → Re-copy it from BotFather and try again.
+
+"invalid Anthropic API key"
+  → The key must start with  sk-ant-
+  → Re-copy it from console.anthropic.com and try again.
+
+Something else
+  → Copy the error message and ask for help.
+
+
+KEEP THESE SAFE
+---------------
+
+Your Telegram bot token and Anthropic API key are like passwords.
+Don't share them publicly (in screenshots, chats, or emails).
+If you think one leaked, regenerate it on BotFather / console.anthropic.com.
