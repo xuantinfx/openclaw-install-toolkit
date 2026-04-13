@@ -315,7 +315,7 @@ Then:
 **After this step, say:**
 > ✅ Daily pipeline scheduled at [time] [timezone].
 >
-> Finishing up — let me initialize the workspace...
+> Now let me set up the workspace and crawl your competitor sites for the first time...
 
 **Proceed directly to Step 9 (no confirmation needed — it's automatic).**
 
@@ -341,7 +341,37 @@ Initialize data files if they don't exist:
 
 ---
 
-## Step 10: Summary
+## Step 10: First-Time Crawl
+
+Run a full crawl of all competitor sites to build the initial content database. This is required so the pipeline has data to generate suggestions from.
+
+```bash
+source ~/.openclaw/workspace/.env-content-monitor
+FIRECRAWL_API_KEY=$FIRECRAWL_API_KEY python3 scripts/crawl.py --schedule --force
+```
+
+The `--force` flag ensures ALL sites are crawled regardless of schedule (first-time baseline).
+
+Say:
+
+> 🔍 **Crawling competitor sites for the first time...**
+> This may take a few minutes depending on the number of sites.
+
+After crawl completes, say:
+
+> ✅ **First crawl complete!** Scraped [X] sites. Content database is ready.
+
+If crawl fails (e.g. Firecrawl key invalid or rate limited):
+
+> ⚠️ **Crawl had issues:** [error description]
+> This is not critical — you can re-crawl later with "crawl sites".
+> Continuing with setup...
+
+**Proceed directly to Step 11.**
+
+---
+
+## Step 11: Summary
 
 Show the user a complete summary:
 

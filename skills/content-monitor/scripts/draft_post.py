@@ -25,7 +25,7 @@ import datetime
 import re
 from pathlib import Path
 
-WORKSPACE = Path(__file__).parent.parent.parent.parent
+WORKSPACE = Path(os.environ.get("CONTENT_MONITOR_WORKSPACE", str(Path.home() / ".openclaw" / "workspace")))
 SITES_DIR = WORKSPACE / "sites"
 DRAFTS_DIR = WORKSPACE / "posts" / "drafts"
 STATE_FILE = WORKSPACE / "crawl-state.json"

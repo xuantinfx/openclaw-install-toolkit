@@ -29,7 +29,7 @@ from pathlib import Path
 API_KEY = os.environ.get("FIRECRAWL_API_KEY", "")
 API_URL = "https://api.firecrawl.dev/v1/scrape"
 
-WORKSPACE = Path(__file__).parent.parent.parent.parent  # up to workspace root
+WORKSPACE = Path(os.environ.get("CONTENT_MONITOR_WORKSPACE", str(Path.home() / ".openclaw" / "workspace")))
 SITES_DIR = WORKSPACE / "sites"
 POSTS_DIR = WORKSPACE / "posts" / "drafts"
 STATE_FILE = WORKSPACE / "crawl-state.json"

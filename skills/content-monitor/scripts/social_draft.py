@@ -25,7 +25,7 @@ import hashlib
 import random
 from pathlib import Path
 
-WORKSPACE = Path(__file__).parent.parent.parent.parent
+WORKSPACE = Path(os.environ.get("CONTENT_MONITOR_WORKSPACE", str(Path.home() / ".openclaw" / "workspace")))
 SKILL_DIR = Path(__file__).parent.parent
 DRAFTS_DIR = WORKSPACE / "posts" / "drafts"
 SITES_DIR = WORKSPACE / "sites"

@@ -31,7 +31,8 @@ Step 4/7: Writing style → ask for sample posts or skip → confirm → WAIT
 Step 5/7: Weekly themes → show schedule → ask customize or keep defaults → confirm → WAIT
 Step 6/7: API keys → ask Firecrawl key → WAIT → ask Google AI key → WAIT → ask Brave key → WAIT → save → confirm → WAIT
 Step 7/7: Domain + Cron → ask domain → ask time → use CronCreate tool (NOT LaunchAgent) → confirm
-Final: Init workspace → show summary → ask "want to run pipeline now?"
+Step 8: Init workspace + first-time crawl (auto — crawl ALL competitor sites with --force)
+Final: Show summary → ask "want to run pipeline now?"
 ```
 
 **Rules**: After EVERY step → confirm what was done → ask "Continue?" → WAIT for user.
@@ -185,9 +186,12 @@ GOOGLE_AI_API_KEY=<key> python3 generate_image.py --prompt "Attorney reviewing c
 |---|---|
 | No suggestions | Run `news_fetch.py --auto` then `suggest_daily.py --record` |
 | Image generation fails | Check `GOOGLE_AI_API_KEY` and billing at aistudio.google.com |
-| Auto-post fails | Check browser has Facebook/X logged in |
-| Facebook image upload stuck / Finder dialog open | NEVER click "Photo/video" button. Use hidden file input: `browser_evaluate('document.querySelector("input[type=file]").click()')` then `browser_file_upload`. Press Escape if dialog stuck. |
-| X image upload fails | Use evaluate workaround — see `auto_post.py` |
+| Auto-post fails: Chrome CDP not found | Launch Chrome manually: `"/Applications/Google Chrome.app/Contents/MacOS/Google Chrome" --remote-debugging-port=18800 --user-data-dir="/tmp/chrome-openclaw-cdp" --no-first-run "https://www.facebook.com"` then log in to FB + X |
+| Auto-post fails: not logged in | Open Chrome CDP, navigate to facebook.com / x.com and log in manually, then retry |
+| Facebook image upload stuck / Finder dialog open | **Never** use `browser_evaluate + click + browser_file_upload`. Use `auto_post.py` which calls Playwright `set_input_files()` directly — no Finder dialog opens |
+| X image upload fails | Same fix: use `auto_post.py` with Playwright `set_input_files()` on `input[data-testid="fileInput"]` |
+| Facebook/X Post button blocked by overlay | `auto_post.py` uses `page.evaluate()` JS click which bypasses overlay divs. Never use Playwright locator click for Post buttons |
+| Chrome profile conflict (two Chrome instances) | CDP automation must use `--user-data-dir=/tmp/chrome-openclaw-cdp` (separate from your Default profile). Kill old Chrome first: `pkill -f "chrome-openclaw-cdp"` |
 | Duplicate topics | Auto-resets after 30 days |
 
 ## Documentation

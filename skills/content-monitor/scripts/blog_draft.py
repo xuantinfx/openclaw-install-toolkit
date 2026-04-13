@@ -23,6 +23,7 @@ Output:
 """
 
 import os
+import os
 import sys
 import json
 import argparse
@@ -32,7 +33,7 @@ import hashlib
 import random
 from pathlib import Path
 
-WORKSPACE = Path(__file__).parent.parent.parent.parent
+WORKSPACE = Path(os.environ.get("CONTENT_MONITOR_WORKSPACE", str(Path.home() / ".openclaw" / "workspace")))
 DRAFTS_DIR = WORKSPACE / "posts" / "drafts"
 SITES_DIR = WORKSPACE / "sites"
 NEWS_DIR = WORKSPACE / "news"

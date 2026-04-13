@@ -24,7 +24,7 @@ import sys
 from pathlib import Path
 
 SKILL_DIR = Path(__file__).parent.parent
-WORKSPACE = Path.home() / ".openclaw" / "workspace"
+WORKSPACE = Path(os.environ.get("CONTENT_MONITOR_WORKSPACE", str(Path.home() / ".openclaw" / "workspace")))
 ENV_FILE = WORKSPACE / ".env-content-monitor"
 SITES_FILE = SKILL_DIR / "references" / "sites.md"
 SAMPLE_POSTS_FILE = SKILL_DIR / "references" / "sample-posts.md"

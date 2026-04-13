@@ -18,6 +18,7 @@ Usage:
   python3 approve_post.py --publish posts/approved/2026-04-06-2053
 """
 
+import os
 import sys
 import argparse
 import datetime
@@ -25,7 +26,7 @@ import shutil
 import subprocess
 from pathlib import Path
 
-WORKSPACE     = Path(__file__).parent.parent.parent.parent
+WORKSPACE = Path(os.environ.get("CONTENT_MONITOR_WORKSPACE", str(Path.home() / ".openclaw" / "workspace")))
 DRAFTS_DIR    = WORKSPACE / "posts" / "drafts"
 APPROVED_DIR  = WORKSPACE / "posts" / "approved"
 PUBLISHED_DIR = WORKSPACE / "posts" / "published"

@@ -17,6 +17,7 @@ Output:
   Updates workspace/content-calendar.json
 """
 
+import os
 import json
 import datetime
 import argparse
@@ -25,7 +26,7 @@ import random
 import re
 from pathlib import Path
 
-WORKSPACE = Path(__file__).parent.parent.parent.parent
+WORKSPACE = Path(os.environ.get("CONTENT_MONITOR_WORKSPACE", str(Path.home() / ".openclaw" / "workspace")))
 CALENDAR_FILE = WORKSPACE / "content-calendar.json"
 SITES_DIR = WORKSPACE / "sites"
 NEWS_DIR = WORKSPACE / "news"
