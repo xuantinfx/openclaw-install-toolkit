@@ -18,6 +18,7 @@ Output:
   JSON + MD saved to workspace/news/<date>-<theme>.json and .md
 """
 
+import os
 import gzip
 import io
 import os
@@ -29,7 +30,7 @@ import urllib.request
 import urllib.parse
 from pathlib import Path
 
-WORKSPACE = Path(__file__).parent.parent.parent.parent
+WORKSPACE = Path(os.environ.get("CONTENT_MONITOR_WORKSPACE", str(Path.home() / ".openclaw" / "workspace")))
 NEWS_DIR = WORKSPACE / "news"
 
 BRAVE_API_URL = "https://api.search.brave.com/res/v1/news/search"

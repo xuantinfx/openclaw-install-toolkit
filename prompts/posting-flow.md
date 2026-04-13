@@ -131,24 +131,22 @@ Say:
 
 ## Step 5: Post to Facebook
 
-Execute via Playwright MCP browser:
+Run auto_post.py trực tiếp (Playwright CDP):
 
-1. Navigate to `https://www.facebook.com/`
-2. Wait for page to load (verify logged in)
-3. Click "What's on your mind?" to open post composer
-4. Wait for the post editor modal to appear
-5. Click the text input area and type the Facebook post content
-6. **Upload image — use hidden file input, do NOT click "Photo/video" button:**
-   - Run `browser_evaluate`: `document.querySelector('input[type="file"][accept*="image"]').click()`
-   - Immediately run `browser_file_upload` with the image file path
-   - If selector doesn't work, try: `document.querySelector('form input[type="file"]').click()`
-   - Wait for image thumbnail to appear (2-3 seconds)
-   - **If Finder/file dialog is stuck open, press Escape to close it**
-   - **NEVER click the "Photo/video" button** — it opens the OS file dialog which cannot be automated and will get stuck
-7. Click "Post" button
-8. Wait for confirmation
+```bash
+source ~/.openclaw/workspace/.env-content-monitor
+python3 scripts/auto_post.py --draft <approved-draft-path> --facebook-only
+```
 
-**Why not click "Photo/video"?** Clicking it opens the macOS Finder dialog. Playwright cannot interact with native OS dialogs. The hidden `<input type="file">` approach bypasses the dialog entirely.
+> **Lưu ý kỹ thuật quan trọng:**
+> - Script dùng `set_input_files()` để inject ảnh trực tiếp vào `<input type="file">` — **KHÔNG** mở Finder dialog
+> - Dùng `page.evaluate()` JS click để bypass overlay divs chặn Playwright click trên nút Post
+> - Tìm composer bằng text JS search (`"What's on your mind"` / `"đang nghĩ"`) thay vì CSS selector
+> - Chi tiết: xem `references/browser-autopost-working-method.md`
+
+**Yêu cầu trước khi chạy:**
+- Chrome đang chạy với CDP tại port 18800 và đã đăng nhập Facebook
+- Nếu Chrome chưa mở: thêm flag `--start-chrome` vào lệnh trên
 
 **After posting (or if it fails), say:**
 
@@ -173,16 +171,17 @@ If failed:
 
 ## Step 6: Post to X (Twitter)
 
-Execute via Playwright MCP browser:
+Run auto_post.py trực tiếp (Playwright CDP):
 
-1. Navigate to `https://x.com/compose/post`
-2. Wait for compose dialog to appear
-3. Type the X post content
-4. Upload image using the workaround:
-   - Run: evaluate `document.querySelector("input[data-testid='fileInput']").click()`
-   - Then immediately upload the file
-5. Click "Post" button
-6. Wait for confirmation
+```bash
+source ~/.openclaw/workspace/.env-content-monitor
+python3 scripts/auto_post.py --draft <approved-draft-path> --x-only
+```
+
+> **Lưu ý kỹ thuật:**
+> - Dùng `set_input_files()` trên `input[data-testid="fileInput"]` để inject ảnh
+> - Dùng JS `evaluate()` click nút Post để bypass overlay
+> - Nếu X chưa mở tab: script tự navigate tới `https://x.com/home`
 
 **After posting (or if it fails), say:**
 
