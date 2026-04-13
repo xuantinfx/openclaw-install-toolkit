@@ -19,6 +19,9 @@ This is a conversational setup. The agent asks the user questions in chat, colle
 - Do NOT skip the cron step — schedule must be created via CronCreate tool
 - Do NOT finish setup until ALL 10 steps are completed
 - Do NOT improvise steps that aren't listed here — follow this prompt exactly
+- **AFTER EVERY STEP: tell the user what was done, then ask if they want to continue to the next step**
+- **NEVER go silent after completing a step** — always respond with a status + next step prompt
+- **If a step fails: explain what went wrong and ask the user how to proceed (retry, skip, or abort)**
 
 ---
 
@@ -38,7 +41,7 @@ Say:
 >
 > Ready to start?
 
-Wait for user confirmation.
+**Wait for user to say yes before proceeding.**
 
 ---
 
@@ -46,6 +49,8 @@ Wait for user confirmation.
 
 Ask:
 
+> **Step 1/7 — Competitor Websites**
+>
 > What websites do you want to monitor for content ideas? These are competitor or industry sites that publish content in your niche.
 >
 > Paste the URLs (one per line), or say "use defaults" to keep the 56 pre-configured sites.
@@ -59,32 +64,46 @@ Ask:
 **If user says "use defaults" or skips:**
 - Confirm: "Using the default 56 competitor sites."
 
+**After this step, say:**
+> ✅ Websites configured. Ready for the next step — Social Media Login. Continue?
+
+**Wait for user confirmation before proceeding to Step 3.**
+
 ---
 
 ## Step 3: Social Media Login
 
 Say:
 
+> **Step 2/7 — Social Media Login**
+>
 > Now let's log in to your social media accounts so I can auto-post for you.
 > I'll open a browser window — please log in to each platform.
+> You can skip this if you want to set it up later.
 
 **Facebook:**
 1. Use Playwright MCP: navigate to `https://www.facebook.com/`
-2. Say: "Please log in to your Facebook account in this browser window. Let me know when you're done."
+2. Say: "I've opened Facebook in the browser. Please log in to your account and let me know when you're done."
 3. Wait for user to confirm
 4. Verify login: take a snapshot of the page and check for logged-in elements (profile picture, "What's on your mind?" composer, or similar)
-5. If verified: "Facebook login confirmed."
+5. If verified: "✅ Facebook login confirmed."
 6. If not verified: "I couldn't verify the login. Are you sure you're logged in?" — let user confirm manually
 
 **X (Twitter):**
 1. Use Playwright MCP: navigate to `https://x.com/`
-2. Say: "Please log in to your X account in this browser window. Let me know when you're done."
+2. Say: "Now I've opened X (Twitter). Please log in and let me know when you're done."
 3. Wait for user to confirm
 4. Verify login: take a snapshot and check for compose button or profile elements
-5. If verified: "X login confirmed."
+5. If verified: "✅ X login confirmed."
 
 **If user wants to skip either platform:**
-- That's fine. Say: "You can log in later before auto-posting."
+- That's fine. Say: "No problem. You can log in later before auto-posting."
+
+**After this step, say:**
+> ✅ Social media login done. [Facebook: connected/skipped] [X: connected/skipped]
+> Next step — Writing Style. Continue?
+
+**Wait for user confirmation before proceeding to Step 4.**
 
 ---
 
@@ -92,6 +111,8 @@ Say:
 
 Ask:
 
+> **Step 3/7 — Writing Style**
+>
 > Do you have any sample posts you'd like me to learn your writing style from? This helps me match your tone when generating content.
 >
 > Options:
@@ -120,12 +141,19 @@ Ask:
 1. Keep the default `references/writing-style.md` as-is
 2. Say: "Using the default professional style. You can add samples anytime by telling me."
 
+**After this step, say:**
+> ✅ Writing style set [custom/default]. Next step — Weekly Content Themes. Continue?
+
+**Wait for user confirmation before proceeding to Step 5.**
+
 ---
 
 ## Step 5: Weekly Content Themes
 
 Ask:
 
+> **Step 4/7 — Weekly Content Themes**
+>
 > Each day of the week has a content theme. Here's the current schedule:
 >
 > | Day | Category | Theme |
@@ -148,7 +176,7 @@ Go through each day one at a time:
 > What category and theme do you want for Monday?
 > Categories: personal-injury, mortgage, both
 > Themes: know_your_rights, hei_education, case_story, market_news, faq, tips, industry_news
-> (Or press Enter to keep the current setting)
+> (Or say "keep" to keep the current setting)
 
 Repeat for Tuesday through Sunday.
 
@@ -167,7 +195,7 @@ python3 scripts/setup_wizard.py save-themes --schedule '{"0": {"category": "pers
 ```
 
 Show the final schedule and confirm:
-> Here's your weekly schedule:
+> Here's your updated weekly schedule:
 > [table]
 > Look good?
 
@@ -175,28 +203,42 @@ Show the final schedule and confirm:
 - Confirm: "Using the default theme schedule."
 - No changes needed — the default `references/theme-schedule.json` is already in place.
 
+**After this step, say:**
+> ✅ Theme schedule configured. Next step — API Keys. Continue?
+
+**Wait for user confirmation before proceeding to Step 6.**
+
 ---
 
 ## Step 6: API Keys
 
 Say:
 
-> Now I need a few API keys. I have a detailed guide at `TOKEN-SETUP.md` if you need help getting them.
+> **Step 5/7 — API Keys**
+>
+> Now I need a few API keys to power the pipeline. I'll walk you through each one.
+> (See TOKEN-SETUP.md for detailed instructions on how to get them.)
 
-Ask for each key one at a time:
+Ask for each key **one at a time**:
 
 **Firecrawl (required):**
 > What's your Firecrawl API key? It starts with `fc-...`
 > (Get one free at firecrawl.dev — 500 credits/month)
 
+Wait for user to provide the key.
+
 **Google AI / Gemini (required):**
 > What's your Google AI API key? It starts with `AIzaSy...`
 > (Get one at aistudio.google.com — billing must be enabled for image generation)
 
+Wait for user to provide the key.
+
 **Brave Search (optional):**
 > Do you have a Brave Search API key? This enables trending news in your content.
 > (Free at api.search.brave.com — 2,000 queries/month)
-> Press Enter to skip.
+> Say "skip" if you don't have one.
+
+Wait for user to provide or skip.
 
 After collecting all keys:
 1. Create directory if needed: `mkdir -p ~/.openclaw/workspace/`
@@ -208,7 +250,16 @@ After collecting all keys:
    export BRAVE_API_KEY="<key>"
    ```
 3. Set permissions: `chmod 600 ~/.openclaw/workspace/.env-content-monitor`
-4. Confirm: "API keys saved securely."
+
+**After this step, say:**
+> ✅ API keys saved securely.
+> - Firecrawl: ✓
+> - Google AI: ✓
+> - Brave Search: [✓ / skipped]
+>
+> Next step — Website Domain. Continue?
+
+**Wait for user confirmation before proceeding to Step 7.**
 
 ---
 
@@ -216,11 +267,19 @@ After collecting all keys:
 
 Ask:
 
-> What's your website domain? This is used for internal link suggestions.
+> **Step 6/7 — Website Domain**
+>
+> What's your website domain? This is used for internal link suggestions in content.
 > Example: www.mysite.com
+> (Say "skip" if you don't have one yet.)
 
-1. Update `YOUR_DOMAIN` in `scripts/suggest_daily.py` and `scripts/blog_draft.py`
-2. Confirm: "Domain set to [domain]."
+1. If user provides a domain: update `YOUR_DOMAIN` in `scripts/suggest_daily.py` and `scripts/blog_draft.py`
+2. If user skips: keep the placeholder
+
+**After this step, say:**
+> ✅ Domain set to [domain / placeholder]. Last step — Schedule. Continue?
+
+**Wait for user confirmation before proceeding to Step 8.**
 
 ---
 
@@ -228,15 +287,21 @@ Ask:
 
 Ask:
 
+> **Step 7/7 — Daily Schedule**
+>
 > What time should I run the daily content pipeline? I'll suggest topics and prepare drafts every morning.
 >
-> Default: 7:00 AM Asia/Saigon (Ho Chi Minh City time)
+> Default: 7:00 AM (Asia/Saigon timezone)
 >
-> Enter a time (e.g. "7:00 AM", "08:30", "6:00 AM") or press Enter for the default.
+> Enter a time (e.g. "7:00 AM", "08:30", "6:00 AM") or say "default" for 7:00 AM.
 
-Also ask:
+Wait for user to answer.
+
+Then ask:
 
 > What timezone? (Default: Asia/Saigon)
+
+Wait for user to answer.
 
 Then:
 1. Convert time to cron expression (e.g. 7:00 AM → `0 7 * * *`)
@@ -245,7 +310,14 @@ Then:
    - Expression: the cron expression
    - Timezone: user's timezone
    - Command/prompt: "Run the Content Monitor daily pipeline: fetch news, suggest topics, generate drafts, and send morning briefing."
-3. Confirm: "Daily pipeline scheduled at [time] [timezone]. You'll get a morning briefing every day."
+3. Confirm the cron was created successfully.
+
+**After this step, say:**
+> ✅ Daily pipeline scheduled at [time] [timezone].
+>
+> Finishing up — let me initialize the workspace...
+
+**Proceed directly to Step 9 (no confirmation needed — it's automatic).**
 
 ---
 
@@ -265,35 +337,51 @@ Initialize data files if they don't exist:
 - `~/.openclaw/workspace/content-calendar.json` → `{"posts": []}`
 - `~/.openclaw/workspace/crawl-state.json` → `{"last_crawled": {}}`
 
+**Proceed directly to Step 10.**
+
 ---
 
 ## Step 10: Summary
 
-Show the user a summary:
+Show the user a complete summary:
 
-> Setup complete! Here's your configuration:
+> 🎉 **Setup complete!** Here's your configuration:
 >
-> - **Websites**: [count] sites monitored
-> - **Facebook**: [connected / not connected]
-> - **X (Twitter)**: [connected / not connected]
-> - **Writing style**: [custom from N samples / default professional]
-> - **Theme schedule**: [custom / default]
-> - **API keys**: Firecrawl ✓, Google AI ✓, Brave [✓/✗]
-> - **Domain**: [domain]
-> - **Schedule**: [time] [timezone] daily
+> | Setting | Value |
+> |---|---|
+> | Websites | [count] sites monitored |
+> | Facebook | [connected / not connected] |
+> | X (Twitter) | [connected / not connected] |
+> | Writing style | [custom from N samples / default] |
+> | Theme schedule | [custom / default] |
+> | Firecrawl key | ✓ saved |
+> | Google AI key | ✓ saved |
+> | Brave Search key | [✓ saved / not set] |
+> | Domain | [domain] |
+> | Daily schedule | [time] [timezone] |
 >
 > **What happens next:**
-> - Every morning at [time], I'll prepare content candidates
-> - You pick which post to use
-> - I'll generate an image and send it for review
-> - After you approve, I'll post to Facebook and X
+> 1. Every morning at [time], I'll prepare content candidates and send you a briefing
+> 2. You pick which post to use (reply with the number)
+> 3. I'll generate an image and send it for review
+> 4. After you approve, I'll post to Facebook and X
 >
-> Say "run content pipeline" anytime to trigger it manually.
+> **You can also say these anytime:**
+> - "run content pipeline" — trigger the pipeline now
+> - "what should I post today" — get today's suggestions
+> - "crawl sites" — refresh competitor data
+> - "content calendar" — see recent topics
+>
+> Want me to run the pipeline now so you can see it in action?
+
+**Wait for user response.** If they say yes, run the pipeline. If no, done.
 
 ---
 
 ## Rules
 
+- **AFTER EVERY STEP: confirm what was done + ask to continue** — NEVER go silent
+- **If something fails: explain the error and ask how to proceed** — don't just stop
 - **Never ask the user to run shell commands** — the agent does everything
 - **Ask one question at a time** — don't overwhelm with multiple questions
 - **Allow skipping any step** — nothing is truly mandatory (except API keys for the pipeline to work)
@@ -301,3 +389,4 @@ Show the user a summary:
 - **Be conversational** — this is a chat, not a form
 - **Save progress** — if the user interrupts, the agent can resume from where it left off by checking which files already exist
 - **All prompts in English** — user-facing text is in English
+- **Show step progress** — every step message should include "Step X/7" so user knows where they are
