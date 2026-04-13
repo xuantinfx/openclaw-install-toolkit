@@ -129,7 +129,7 @@ STEP 6 — Set up the content monitor
 
 Go back to Telegram and send this message to your bot:
 
-    setup content monitor
+    /content-monitor setup
 
 The bot will start walking you through the setup by asking questions.
 
