@@ -1,0 +1,47 @@
+OpenClaw — Full Setup Guide
+===========================
+
+1. Install OpenClaw
+   Run the installer in your terminal:
+
+       curl -fsSL "https://raw.githubusercontent.com/xuantinfx/openclaw-install-toolkit/main/install.sh?$(date +%s)" | bash
+
+2. Provide credentials
+   When prompted, paste:
+     - your Telegram bot token
+     - your Anthropic API key
+
+3. Pair your Telegram account
+   Open Telegram and send any message to your bot. It will reply with
+   something like:
+
+       OpenClaw: access not configured.
+       Your Telegram user id: 1048152213
+       Pairing code: 6P25BBXP
+
+       Ask the bot owner to approve with:
+       openclaw pairing approve telegram 6P25BBXP
+
+4. Approve the pairing
+   Copy the "openclaw pairing approve telegram <code>" line from the bot's
+   reply and run it in your terminal.
+
+5. Install the skills bundle
+   Run:
+
+       curl -fsSL "https://raw.githubusercontent.com/xuantinfx/openclaw-install-toolkit/main/install-skill.sh?$(date +%s)" | bash
+
+6. Configure the content monitor
+   In Telegram, message your bot:
+
+       setup content monitor
+
+7. Complete the setup
+   Follow the steps the assistant walks you through in chat.
+
+8. Verify it works
+   In Telegram, message your bot:
+
+       manual test run
+
+   You should see the monitor execute and return its result.
