@@ -172,8 +172,46 @@ run_official_installer() {
   curl -fsSL --proto '=https' --tlsv1.2 --max-time 30 "$url" | bash \
     || die "official installer failed (url: $url)"
 
-  command -v openclaw >/dev/null 2>&1 \
-    || die "openclaw not on PATH after install — check installer output above"
+  # The npm-based installer places `openclaw` in npm's global bin directory,
+  # which may not be on PATH in this shell session (fresh user profile on
+  # shared Mac, nvm, `.npm-global`, Homebrew at non-default prefix, etc.).
+  # Amend PATH with common candidates before the fatal check.
+  local prefix=""
+  local found=""
+  if ! command -v openclaw >/dev/null 2>&1; then
+    prefix="$(npm prefix -g 2>/dev/null || true)"
+    local cand
+    for cand in \
+      "${prefix:+$prefix/bin}" \
+      "$HOME/.npm-global/bin" \
+      "$HOME/.local/bin" \
+      "/opt/homebrew/bin" \
+      "/usr/local/bin"; do
+      if [ -n "$cand" ] && [ -x "$cand/openclaw" ]; then
+        PATH="$cand:$PATH"
+        found="$cand/openclaw"
+        break
+      fi
+    done
+    export PATH
+    hash -r 2>/dev/null || true
+  fi
+
+  if ! command -v openclaw >/dev/null 2>&1; then
+    printf '[install] openclaw binary not found after install.\n' >&2
+    printf '[install] checked these locations:\n' >&2
+    printf '[install]   npm prefix -g -> %s\n' "${prefix:-<npm not found>}" >&2
+    printf '[install]   %s/.npm-global/bin\n' "$HOME" >&2
+    printf '[install]   %s/.local/bin\n' "$HOME" >&2
+    printf '[install]   /opt/homebrew/bin  /usr/local/bin\n' >&2
+    printf '[install] likely cause: this macOS user profile installed npm\n' >&2
+    printf '[install]   globally to a directory not on your PATH.\n' >&2
+    printf '[install] try: open a new Terminal window and re-run; or run\n' >&2
+    printf '[install]   `npm prefix -g` to see where npm installs, and add\n' >&2
+    printf '[install]   that + /bin to your PATH in ~/.zshrc.\n' >&2
+    die "openclaw not on PATH after install"
+  fi
+  [ -n "$found" ] && printf '[install] found openclaw at %s\n' "$found" >&2
   openclaw --version >/dev/null 2>&1 \
     || die "openclaw --version failed after install"
 }
