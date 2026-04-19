@@ -1,50 +1,35 @@
 # openclaw-install-toolkit
 
-One-shot installer that wraps the official [OpenClaw](https://openclaw.ai) setup with an interactive wizard for Telegram + Anthropic credentials.
+Zip-delivered installer that wraps the official [OpenClaw](https://openclaw.ai) setup with an interactive wizard for Telegram + Anthropic credentials, and copies bundled skills into `~/.openclaw/skills/<name>/` in a single step.
 
-> **Status:** Gateway installer + skill distribution via `install-skill.sh`. Skills are bundled into this toolkit via git subtree and copied into `~/.openclaw/skills/<name>/` on customer machines; the gateway auto-reloads on the next agent turn (no daemon restart). Shellcheck + E2E smoke on macOS + Ubuntu for both installers.
+> **Status:** Single-script installer. Toolkit is delivered to end users as `openclaw-toolkit.zip` (contains `install.sh`, `install.command`, and `skills/`). Skills are bundled via git subtree and copied on install; the gateway auto-reloads on the next agent turn (no daemon restart). Shellcheck + E2E smoke on macOS + Ubuntu.
 
-## Install (one-liner, published URL)
+> **End-user docs:** see `instruction.txt` for the step-by-step setup guide written for non-technical users.
 
-```bash
-curl -fsSL https://raw.githubusercontent.com/xuantinfx/openclaw-install-toolkit/main/install.sh | bash -s -- --port 19000
-```
+## Install (end user, zip delivery)
 
-## Install (clone)
+The recipient unzips `openclaw-toolkit.zip` and runs one of:
+
+- **Drag `install.sh` into Terminal** after typing `bash ` — recommended, exec-bit-independent.
+- **Double-click `install.command`** — may require one-time Gatekeeper bypass (right-click → Open).
+
+The script prompts for the Telegram bot token + Anthropic API key, runs the official OpenClaw installer, writes `~/.openclaw/openclaw.json` (mode `0600`), starts the gateway, and installs every skill under `./skills/` into `~/.openclaw/skills/`.
+
+Only network call during install is the upstream `openclaw.ai/install-cli.sh` fetch plus Telegram/Anthropic verification pings — no calls to `github.com`.
+
+## Install (developer, from clone)
 
 ```bash
 git clone https://github.com/xuantinfx/openclaw-install-toolkit.git
 cd openclaw-install-toolkit
-./install.sh --port 19000
+bash install.sh --port 19000
 ```
 
-After a successful install you can delete the script — OpenClaw handles its own updates.
-
-## Install skills
-
-After `install.sh` completes, install skills bundled with this toolkit into
-`~/.openclaw/skills/<name>/`. The gateway picks them up on the next agent turn
-— no daemon restart.
-
-```bash
-# all bundled skills
-curl -fsSL https://raw.githubusercontent.com/xuantinfx/openclaw-install-toolkit/main/install-skill.sh | bash
-
-# one specific skill
-curl -fsSL https://raw.githubusercontent.com/xuantinfx/openclaw-install-toolkit/main/install-skill.sh | bash -s -- content-monitor
-
-# see what would be installed; write nothing
-curl -fsSL https://raw.githubusercontent.com/xuantinfx/openclaw-install-toolkit/main/install-skill.sh | bash -s -- --dry-run
-```
-
-Re-running is idempotent — the target `~/.openclaw/skills/<name>/` is replaced
-wholesale, so don't hand-edit files there. The script refuses to run if
-`~/.openclaw/` is missing (run `install.sh` first).
+After a successful install you can delete the folder — OpenClaw handles its own updates.
 
 ## Maintainer: updating a skill
 
-Skills are imported via git subtree (see `scripts/skills.map` for the name →
-upstream URL mapping). To refresh from upstream:
+Skills are imported via git subtree (see `scripts/skills.map` for the name → upstream URL mapping). To refresh from upstream:
 
 ```bash
 ./scripts/sync-skill.sh content-monitor   # or --all
@@ -52,15 +37,13 @@ git log -p HEAD                            # review the pulled diff
 git push
 ```
 
-Anything in `skills/*/` on `main` is world-readable once pushed. Review the
-diff before pushing; never commit secrets into a subtree-tracked skill.
+Anything in `skills/*/` on `main` is world-readable once pushed. Review the diff before pushing; never commit secrets into a subtree-tracked skill.
 
 ## Requirements
 
 - macOS or Linux
 - Bash 3.2+ (stock macOS works)
 - `install.sh` needs `curl` and `jq`
-- `install-skill.sh` needs `curl` and `tar`
 
 ## Flags
 
@@ -72,31 +55,22 @@ diff before pushing; never commit secrets into a subtree-tracked skill.
 | `--dry-run` | off | Validate inputs, skip installer + daemon. Useful for CI. |
 | `--help` | — | Print usage |
 
-`install-skill.sh`:
-
-| Flag | Default | Purpose |
-|---|---|---|
-| `[skill ...]` | all | Positional skill names; empty = install every skill in the tarball |
-| `--dry-run` | off | Fetch + list what would be installed; write nothing |
-| `--help` | — | Print usage |
-
 ## Environment overrides
 
-| Var | Scope | Purpose |
-|---|---|---|
-| `TELEGRAM_BOT_TOKEN` | `install.sh` | Skip the token prompt (CI / re-runs) |
-| `ANTHROPIC_API_KEY` | `install.sh` | Skip the key prompt |
-| `OPENCLAW_INSTALL_URL` | `install.sh` | Override upstream installer URL |
-| `OPENCLAW_HOME` | both | Override install dir (default `~/.openclaw`) |
-| `TOOLKIT_TARBALL_URL` | `install-skill.sh` | Override toolkit tarball source (forks, private mirrors) |
-| `TOOLKIT_ALLOW_INSECURE` | `install-skill.sh` | CI-only: allow `file://` tarballs — never set in prod |
+| Var | Purpose |
+|---|---|
+| `TELEGRAM_BOT_TOKEN` | Skip the token prompt (CI / re-runs) |
+| `ANTHROPIC_API_KEY` | Skip the key prompt |
+| `OPENCLAW_INSTALL_URL` | Override upstream installer URL |
+| `OPENCLAW_HOME` | Override install dir (default `~/.openclaw`) |
+| `OPENCLAW_NO_RC_EDIT` | Skip appending the PATH line to `~/.zshrc` / `~/.bash_profile` |
 
-## Security note
+## Security notes
 
 Per the installer spec, secrets are inlined in `~/.openclaw/openclaw.json` at mode `0600`. The script refuses to run inside a git worktree. Do not commit or share this file.
 
-Skills distributed via `install-skill.sh` are fetched over HTTPS (TLS 1.2+) from the public toolkit tarball. The installer rejects non-identifier skill names, multi-root tarballs, and any tarball containing symlinks — so a compromised upstream can't path-traverse outside `~/.openclaw/skills/<name>/` or leak files via symlink redirection. `TOOLKIT_ALLOW_INSECURE` relaxes transport checks for local CI fixtures only — never set it in a real install.
+`install_local_skills()` rejects skill directories with non-identifier names, missing `SKILL.md`, or any symlink in the tree — so a tampered zip can't path-traverse outside `~/.openclaw/skills/<name>/` or leak files via symlink redirection. The script does **not** verify zip integrity cryptographically; trust assumptions are documented in the zip-based-install plan.
 
 ## Design rationale
 
-Skill distribution design, trade-offs, and the decision to use git subtree (not submodules, not release-asset tarballs): see [`plans/20260412-1520-skills-subtree-and-installer/brainstorm.md`](plans/20260412-1520-skills-subtree-and-installer/brainstorm.md).
+Zip delivery design, trade-offs, and the decision to drop per-user GitHub fetches: see [`plans/260419-1825-zip-based-install/plan.md`](plans/260419-1825-zip-based-install/plan.md) and the linked brainstorm report.

@@ -14,6 +14,16 @@ DEFAULT_PORT=18789
 DEFAULT_INSTALL_URL="https://openclaw.ai/install-cli.sh"
 MODEL="anthropic/claude-sonnet-4-6"
 
+# Resolve the directory this script lives in so we can find the bundled
+# ./skills/ folder regardless of CWD. Only treat BASH_SOURCE[0] as valid
+# when it points at a real file — under `curl|bash`, BASH_SOURCE is unset
+# and $0 is "bash", so without this check dirname would fall through to
+# CWD and install whatever hostile ./skills/ happens to be there.
+SCRIPT_DIR=""
+if [ -n "${BASH_SOURCE[0]:-}" ] && [ -f "${BASH_SOURCE[0]}" ]; then
+  SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+fi
+
 PORT="$DEFAULT_PORT"
 DRY_RUN=0
 BOT_USERNAME=""
@@ -298,6 +308,70 @@ verify_anthropic() {
   fi
 }
 
+validate_skill_name() {
+  local name="$1"
+  case "$name" in
+    ''|.|..|*/*|*\\*|.*) die "invalid skill name: '$name'" ;;
+  esac
+  printf '%s' "$name" | grep -Eq '^[a-z0-9][a-z0-9_-]{0,63}$' \
+    || die "invalid skill name: '$name' (must match [a-z0-9][a-z0-9_-]{0,63})"
+}
+
+install_local_skills() {
+  # SCRIPT_DIR is empty when the script is piped via stdin (curl|bash). That
+  # flow cannot ship a ./skills/ folder — direct the user to the zip path.
+  if [ -z "$SCRIPT_DIR" ]; then
+    die "cannot locate script directory — run install.sh from the unzipped folder, not via pipe"
+  fi
+
+  local skills_root="$SCRIPT_DIR/skills"
+  [ -d "$skills_root" ] \
+    || die "skills/ not found next to install.sh (looked in $skills_root) — zip may be corrupt or incomplete"
+
+  # Reject symlinks anywhere in the tree. A compromised/tampered zip could
+  # smuggle one pointing at /etc/* and cp -R would dereference it.
+  # Use `wc -l` (reads stdin to EOF) instead of `| read -r` — the latter
+  # closes the pipe early, giving find SIGPIPE, which under `set -o pipefail`
+  # flips the `if` to the nonzero branch and silently bypasses the check.
+  local symlink_count
+  symlink_count="$(find "$skills_root" -type l 2>/dev/null | wc -l | tr -d ' ')"
+  if [ "${symlink_count:-0}" -gt 0 ]; then
+    die "skills/ contains symlinks; refusing to install (possible tampering)"
+  fi
+
+  local count=0
+  local entry name src dst
+  for entry in "$skills_root"/*/; do
+    [ -d "$entry" ] || continue
+    name="$(basename "$entry")"
+    validate_skill_name "$name"
+
+    src="$skills_root/$name"
+    dst="$OPENCLAW_HOME/skills/$name"
+
+    [ -f "$src/SKILL.md" ] \
+      || die "skill '$name' is missing SKILL.md at its root — corrupt zip?"
+
+    if [ "$DRY_RUN" -eq 1 ]; then
+      printf '[dry-run] would install skill %s -> %s\n' "$name" "$dst" >&2
+    else
+      mkdir -p "$OPENCLAW_HOME/skills" || die "cannot create $OPENCLAW_HOME/skills"
+      rm -rf "$dst"
+      cp -R "$src" "$dst" || die "failed to copy skill $name into place"
+      printf '[skills] installed %s -> %s\n' "$name" "$dst" >&2
+    fi
+    count=$((count + 1))
+  done
+
+  [ "$count" -gt 0 ] || die "no skills found under $skills_root — zip may be incomplete"
+
+  if [ "$DRY_RUN" -eq 1 ]; then
+    printf '[dry-run] would install %d skill(s) from %s\n' "$count" "$skills_root" >&2
+  else
+    printf '[skills] installed %d skill(s) into %s/skills/\n' "$count" "$OPENCLAW_HOME" >&2
+  fi
+}
+
 ensure_openclaw_on_path() {
   local bin_dir="$OPENCLAW_HOME/bin"
   [ -x "$bin_dir/openclaw" ] || return 0
@@ -387,6 +461,7 @@ main() {
   fi
   backup_and_write_config
   if [ "$DRY_RUN" -eq 1 ]; then
+    install_local_skills
     printf '[dry-run] would restart daemon and verify endpoints\n' >&2
     printf '[dry-run] generated config:\n' >&2
     cat "$OPENCLAW_HOME/openclaw.json"
@@ -396,6 +471,7 @@ main() {
   wait_for_healthz
   verify_telegram
   verify_anthropic
+  install_local_skills
   on_success
 }
 

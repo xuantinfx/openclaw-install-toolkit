@@ -24,15 +24,27 @@ jobs:
         run: brew install shellcheck jq
 
       - name: Shellcheck
-        run: shellcheck install.sh install-skill.sh scripts/sync-skill.sh
+        run: shellcheck install.sh scripts/sync-skill.sh
 
-      - name: Dry-run smoke test
+      - name: Dry-run smoke test (config + skills)
         env:
           TELEGRAM_BOT_TOKEN: "1234567890:AABBCCDDEEFFGGHHIIJJKKLLMMNNOOPPQQRR"
           ANTHROPIC_API_KEY: "sk-ant-fake-ci-smoke-test-key-not-real"
         run: |
+          set -euo pipefail
+
+          # Stage a fresh copy of install.sh next to a fixture skills/ dir so
+          # install_local_skills() resolves ./skills via SCRIPT_DIR.
+          stage="$(mktemp -d)"
+          cp install.sh "$stage/"
+          mkdir -p "$stage/skills/test-fixture"
+          cat > "$stage/skills/test-fixture/SKILL.md" <<'EOF'
+          # Test Fixture Skill
+          EOF
+
           export OPENCLAW_HOME_OVERRIDE="$(mktemp -d)"
-          ./install.sh --port 19000 --dry-run
+          bash "$stage/install.sh" --port 19000 --dry-run
+
           cfg="$OPENCLAW_HOME_OVERRIDE/openclaw.json"
           test -f "$cfg" || { echo "config not written"; exit 1; }
           jq -e '.gateway.port == 19000' "$cfg"
@@ -45,72 +57,61 @@ jobs:
           perms="$(stat -c '%a' "$cfg" 2>/dev/null || stat -f '%Lp' "$cfg")"
           test "$perms" = "600" || { echo "expected 0600, got $perms"; exit 1; }
 
-      - name: install-skill.sh smoke test
+          # --dry-run must not write the skill to $OPENCLAW_HOME/skills.
+          test ! -e "$OPENCLAW_HOME_OVERRIDE/skills/test-fixture" \
+            || { echo "--dry-run wrote skill"; exit 1; }
+
+      - name: install_local_skills negative cases
+        env:
+          TELEGRAM_BOT_TOKEN: "1234567890:AABBCCDDEEFFGGHHIIJJKKLLMMNNOOPPQQRR"
+          ANTHROPIC_API_KEY: "sk-ant-fake-ci-smoke-test-key-not-real"
         run: |
           set -euo pipefail
-          # Build a fixture tarball that mimics the GitHub archive layout:
-          # a single top-level dir containing skills/<name>/SKILL.md.
-          fixture_root="$(mktemp -d)"
-          stage="$fixture_root/openclaw-install-toolkit-main"
+
+          # Case 1: missing ./skills/ must fail loudly.
+          stage_missing="$(mktemp -d)"
+          cp install.sh "$stage_missing/"
+          export OPENCLAW_HOME_OVERRIDE
+          OPENCLAW_HOME_OVERRIDE="$(mktemp -d)"
+          if bash "$stage_missing/install.sh" --dry-run 2>/dev/null; then
+            echo "FAIL: missing skills/ should have been rejected"; exit 1
+          fi
+
+          # Case 2: symlink in skills tree must be rejected.
+          stage_symlink="$(mktemp -d)"
+          cp install.sh "$stage_symlink/"
+          mkdir -p "$stage_symlink/skills/good"
+          echo "# good" > "$stage_symlink/skills/good/SKILL.md"
+          ln -s /etc/passwd "$stage_symlink/skills/leak"
+          OPENCLAW_HOME_OVERRIDE="$(mktemp -d)"
+          if bash "$stage_symlink/install.sh" --dry-run 2>/dev/null; then
+            echo "FAIL: symlink in skills/ should have been rejected"; exit 1
+          fi
+
+          # Case 3: skill dir without SKILL.md must be rejected.
+          stage_missing_md="$(mktemp -d)"
+          cp install.sh "$stage_missing_md/"
+          mkdir -p "$stage_missing_md/skills/no-skill-md"
+          OPENCLAW_HOME_OVERRIDE="$(mktemp -d)"
+          if bash "$stage_missing_md/install.sh" --dry-run 2>/dev/null; then
+            echo "FAIL: missing SKILL.md should have been rejected"; exit 1
+          fi
+
+      - name: Idempotency — dry-run twice succeeds
+        env:
+          TELEGRAM_BOT_TOKEN: "1234567890:AABBCCDDEEFFGGHHIIJJKKLLMMNNOOPPQQRR"
+          ANTHROPIC_API_KEY: "sk-ant-fake-ci-smoke-test-key-not-real"
+        run: |
+          set -euo pipefail
+          stage="$(mktemp -d)"
+          cp install.sh "$stage/"
           mkdir -p "$stage/skills/test-fixture"
-          echo "# Test Fixture Skill" > "$stage/skills/test-fixture/SKILL.md"
-          tar -czf "$fixture_root/toolkit.tar.gz" -C "$fixture_root" openclaw-install-toolkit-main
+          echo "# Test Fixture" > "$stage/skills/test-fixture/SKILL.md"
 
-          # Install into an ephemeral $HOME so we don't touch the runner state.
-          home_override="$(mktemp -d)"
-          mkdir -p "$home_override/.openclaw"
+          export OPENCLAW_HOME_OVERRIDE="$(mktemp -d)"
+          bash "$stage/install.sh" --dry-run
+          bash "$stage/install.sh" --dry-run
 
-          HOME="$home_override" \
-            TOOLKIT_TARBALL_URL="file://$fixture_root/toolkit.tar.gz" \
-            TOOLKIT_ALLOW_INSECURE=1 \
-            ./install-skill.sh test-fixture
-
-          installed="$home_override/.openclaw/skills/test-fixture/SKILL.md"
-          test -f "$installed" || { echo "skill not installed at $installed"; exit 1; }
-          grep -q "Test Fixture Skill" "$installed"
-
-          # Idempotency: second run must succeed too.
-          HOME="$home_override" \
-            TOOLKIT_TARBALL_URL="file://$fixture_root/toolkit.tar.gz" \
-            TOOLKIT_ALLOW_INSECURE=1 \
-            ./install-skill.sh test-fixture
-
-          # --dry-run must not write anything new (not even the skills/ parent).
-          dry_home="$(mktemp -d)"
-          mkdir -p "$dry_home/.openclaw"
-          HOME="$dry_home" \
-            TOOLKIT_TARBALL_URL="file://$fixture_root/toolkit.tar.gz" \
-            TOOLKIT_ALLOW_INSECURE=1 \
-            ./install-skill.sh --dry-run
-          test ! -e "$dry_home/.openclaw/skills" \
-            || { echo "--dry-run wrote files"; exit 1; }
-
-          # Unknown skill must exit non-zero with a clear error.
-          if HOME="$home_override" \
-               TOOLKIT_TARBALL_URL="file://$fixture_root/toolkit.tar.gz" \
-               TOOLKIT_ALLOW_INSECURE=1 \
-               ./install-skill.sh nonexistent-skill 2>/dev/null; then
-            echo "FAIL: bogus skill should have failed"; exit 1
-          fi
-
-          # Path-traversal in skill name must be rejected before any fs op.
-          if HOME="$home_override" \
-               TOOLKIT_TARBALL_URL="file://$fixture_root/toolkit.tar.gz" \
-               TOOLKIT_ALLOW_INSECURE=1 \
-               ./install-skill.sh '../evil' 2>/dev/null; then
-            echo "FAIL: traversal name should have been rejected"; exit 1
-          fi
-
-          # Symlink in tarball must be rejected (M3 guard from phase-02 review).
-          mal_root="$(mktemp -d)"
-          mal_stage="$mal_root/openclaw-install-toolkit-main"
-          mkdir -p "$mal_stage/skills/evil"
-          echo "# evil" > "$mal_stage/skills/evil/SKILL.md"
-          ln -s /etc/passwd "$mal_stage/skills/evil/leak"
-          tar -czf "$mal_root/toolkit.tar.gz" -C "$mal_root" openclaw-install-toolkit-main
-          if HOME="$home_override" \
-               TOOLKIT_TARBALL_URL="file://$mal_root/toolkit.tar.gz" \
-               TOOLKIT_ALLOW_INSECURE=1 \
-               ./install-skill.sh evil 2>/dev/null; then
-            echo "FAIL: symlink tarball should have been rejected"; exit 1
-          fi
+          # Second run must have backed up the first config.
+          ls "$OPENCLAW_HOME_OVERRIDE"/openclaw.json.bak.* >/dev/null \
+            || { echo "expected config backup after re-run"; exit 1; }

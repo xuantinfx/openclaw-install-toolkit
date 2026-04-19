@@ -53,19 +53,43 @@ On your Mac:
   - Type:  Terminal
   - Press Enter.
 
-A window with text will open. This is where you'll paste the commands below.
+A window with text will open. This is where you'll run the installer.
 
 
-STEP 2 — Install OpenClaw
--------------------------
+STEP 2 — Unzip the toolkit and run the installer
+------------------------------------------------
 
-Copy this whole line, paste it into Terminal, and press Enter:
+You received a file called  openclaw-toolkit.zip  via message.
 
-    curl -fsSL "https://raw.githubusercontent.com/xuantinfx/openclaw-install-toolkit/main/install.sh?$(date +%s)" | bash
+  1. In Finder, double-click the zip. macOS will unzip it into a folder.
+  2. Open the folder. Inside you'll see at least these files:
+        install.sh
+        install.command
+        skills   (a sub-folder)
 
-It will download and start the installer. You'll see messages scroll by — that's normal.
+You can start the installer in one of two ways.
 
-After a moment it will stop and ask you two questions:
+Way A — drag-to-Terminal (recommended, always works):
+
+  1. Make sure the Terminal window from STEP 1 is open.
+  2. Click in the Terminal window. Type the four characters  bash  then
+     press the SPACE BAR once. Do NOT press Enter yet.
+  3. Drag the file  install.sh  from the Finder folder into the Terminal
+     window. The file's full path will appear right after "bash ".
+  4. Now press Enter.
+
+Way B — double-click (simpler, may need one extra click the first time):
+
+  1. In Finder, double-click  install.command
+  2. A new Terminal window will open and start the installer.
+
+     First time only: macOS may say "install.command cannot be opened
+     because it is from an unidentified developer." If that happens,
+     close the warning, right-click (or Control-click) on install.command
+     in Finder, choose  Open , then click  Open  in the confirmation dialog.
+     macOS will remember your choice after that.
+
+Either way, after a few seconds the installer will stop and ask two questions:
 
   Telegram bot token:
       Paste the long code from BotFather and press Enter.
@@ -74,6 +98,7 @@ After a moment it will stop and ask you two questions:
       Paste the key that starts with sk-ant-... and press Enter.
 
 Wait for it to finish. When it's done you'll see a success message.
+The skills are installed automatically as part of this step — no extra command.
 
 
 STEP 3 — Say hi to your bot
@@ -112,19 +137,7 @@ Now your Telegram bot is connected to the AI. Try sending it a message
 like "hello" — it should reply like a chat assistant.
 
 
-STEP 5 — Install the skills (extra abilities)
----------------------------------------------
-
-Skills give your assistant special powers — like monitoring websites.
-
-In Terminal, paste this line and press Enter:
-
-    curl -fsSL "https://raw.githubusercontent.com/xuantinfx/openclaw-install-toolkit/main/install-skill.sh?$(date +%s)" | bash
-
-Wait for it to finish.
-
-
-STEP 6 — Set up the content monitor
+STEP 5 — Set up the content monitor
 -----------------------------------
 
 Go back to Telegram and send this message to your bot:
@@ -134,7 +147,7 @@ Go back to Telegram and send this message to your bot:
 The bot will start walking you through the setup by asking questions.
 
 
-STEP 7 — Follow the bot's instructions
+STEP 6 — Follow the bot's instructions
 --------------------------------------
 
 Just answer the bot's questions in Telegram. It will tell you what to
@@ -142,7 +155,7 @@ enter at each step. Take your time — if you're unsure, you can ask the
 bot to explain.
 
 
-STEP 8 — Test that it works
+STEP 7 — Test that it works
 ---------------------------
 
 When setup is finished, send your bot this message:
@@ -155,9 +168,19 @@ You should see the monitor run and report back what it found. Done!
 TROUBLESHOOTING
 ---------------
 
-"command not found" when pasting a command
-  → Make sure you copied the whole line with no extra spaces.
-  → Try closing Terminal and opening a fresh one.
+"Permission denied" when running install.sh
+  → Use Way A from STEP 2: open Terminal, type  bash  and a space,
+    then drag install.sh into Terminal, then press Enter.
+  → This works even if the file lost its "executable" mark during unzip.
+
+install.command won't open — "unidentified developer" warning
+  → Right-click (or Control-click) on  install.command  in Finder.
+  → Choose  Open , then click  Open  in the confirmation dialog.
+  → macOS will remember your choice after that.
+
+Unzipping didn't create a folder
+  → Try double-clicking the zip again in Finder — macOS's built-in
+    Archive Utility is the most reliable. Avoid third-party unzip apps.
 
 The bot doesn't reply
   → Make sure you completed Step 4 (approval).
@@ -170,6 +193,11 @@ The bot doesn't reply
 "invalid Anthropic API key"
   → The key must start with  sk-ant-
   → Re-copy it from console.anthropic.com and try again.
+
+"skills/ not found next to install.sh"
+  → The zip was unzipped incompletely or the  skills  folder was moved.
+  → Re-unzip the original zip file and run the installer from inside
+    the fresh folder.
 
 Something else
   → Copy the error message and ask for help.
