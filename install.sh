@@ -27,6 +27,22 @@ fi
 PORT="$DEFAULT_PORT"
 DRY_RUN=0
 BOT_USERNAME=""
+RESET=0
+KEEP_DATA=0
+# Holds OPENCLAW_HOME as the user supplied it, before the dry-run remap below
+# replaces it with a tmpdir. Detection + recovery snapshot must use the real
+# path, otherwise --dry-run --reset previews "no config found" on every box.
+ORIGINAL_OPENCLAW_HOME=""
+
+# Coerce truthy spellings to 1; everything else (including unset) stays 0.
+# Without this, OPENCLAW_RESET=true triggers `[: integer expression expected`
+# under set -e on the arithmetic checks below.
+case "${OPENCLAW_RESET:-}" in
+  1|true|TRUE|True|yes|YES|Yes|on|ON|On) RESET=1 ;;
+esac
+case "${OPENCLAW_KEEP_DATA:-}" in
+  1|true|TRUE|True|yes|YES|Yes|on|ON|On) KEEP_DATA=1 ;;
+esac
 
 die() {
   printf 'error: %s\n' "$*" >&2
@@ -35,11 +51,13 @@ die() {
 
 usage() {
   cat <<'EOF'
-Usage: install.sh [--port N] [--dry-run] [--help]
+Usage: install.sh [--port N] [--dry-run] [--reset|--keep-data] [--help]
 
 Options:
   --port N       Gateway port to write into openclaw.json (default 18789)
   --dry-run      Collect inputs and show generated config; skip installer + daemon
+  --reset        Wipe existing install (openclaw reset --scope full) without prompting
+  --keep-data    Keep existing install data without prompting (default under no-TTY)
   --help, -h     Show this message
 
 Environment:
@@ -47,6 +65,12 @@ Environment:
   ANTHROPIC_API_KEY      If set, skip interactive prompt
   OPENCLAW_INSTALL_URL   Override official installer URL
   OPENCLAW_HOME          Override install dir (default: $HOME/.openclaw)
+  OPENCLAW_RESET=1       Same as --reset
+  OPENCLAW_KEEP_DATA=1   Same as --keep-data
+
+When an existing install is detected ($OPENCLAW_HOME/openclaw.json), the
+installer prompts y/N to wipe before reinstalling. Default = N (keep data).
+Without a TTY (e.g. curl|bash), the wipe is auto-skipped — pass --reset to force.
 EOF
 }
 
@@ -71,6 +95,14 @@ parse_args() {
         DRY_RUN=1
         shift
         ;;
+      --reset)
+        RESET=1
+        shift
+        ;;
+      --keep-data)
+        KEEP_DATA=1
+        shift
+        ;;
       -h|--help)
         usage
         exit 0
@@ -87,6 +119,10 @@ parse_args() {
   esac
   if [ "$PORT" -lt 1 ] || [ "$PORT" -gt 65535 ]; then
     die "invalid port: $PORT (must be 1-65535)"
+  fi
+
+  if [ "$RESET" -eq 1 ] && [ "$KEEP_DATA" -eq 1 ]; then
+    die "--reset and --keep-data are mutually exclusive"
   fi
 }
 
@@ -173,6 +209,112 @@ validate_secrets() {
       ;;
     *) die "invalid Anthropic API key format (expected prefix: sk-ant-)" ;;
   esac
+}
+
+resolve_openclaw_binary() {
+  # Returns 0 if the openclaw binary is callable (possibly after PATH amendment),
+  # 1 otherwise. Mirrors the search in run_official_installer so a prior install
+  # under the upstream's self-contained prefix is still findable here.
+  command -v openclaw >/dev/null 2>&1 && return 0
+  local prefix cand
+  prefix="$(npm prefix -g 2>/dev/null || true)"
+  for cand in \
+    "$OPENCLAW_HOME/bin" \
+    "${prefix:+$prefix/bin}" \
+    "$HOME/.npm-global/bin" \
+    "$HOME/.local/bin" \
+    "/opt/homebrew/bin" \
+    "/usr/local/bin"; do
+    if [ -n "$cand" ] && [ -x "$cand/openclaw" ]; then
+      PATH="$cand:$PATH"
+      export PATH
+      hash -r 2>/dev/null || true
+      return 0
+    fi
+  done
+  return 1
+}
+
+maybe_reset_existing_install() {
+  # Probe the user's real install dir, not the dry-run mktemp remap.
+  # ORIGINAL_OPENCLAW_HOME is captured in main() before the remap fires.
+  local home="${ORIGINAL_OPENCLAW_HOME:-$OPENCLAW_HOME}"
+  local cfg="$home/openclaw.json"
+  # No prior config => nothing to wipe. Probe the file (not the dir) because
+  # the upstream installer sometimes leaves an empty bin/ behind on a fresh box.
+  [ -f "$cfg" ] || return 0
+
+  local decision=""
+  [ "$RESET" -eq 1 ] && decision="reset"
+  [ "$KEEP_DATA" -eq 1 ] && decision="skip"
+  [ -z "$decision" ] && decision="ask"
+
+  if [ "$decision" = "ask" ]; then
+    # `[ -r /dev/tty ]` is unreliable on macOS — the device node always exists
+    # and is access(2)-readable, but open(2) fails with ENXIO when the process
+    # has no controlling terminal (CI, nohup, harness shells). Probe by
+    # actually opening it.
+    if : </dev/tty >/dev/tty 2>/dev/null; then
+      printf '[warn] existing OpenClaw install detected at %s\n' "$home" >/dev/tty
+      printf '[warn] wipe config, skills, credentials, sessions before reinstalling? [y/N]: ' >/dev/tty
+      local ans=""
+      # shellcheck disable=SC2162
+      IFS= read -r ans </dev/tty || ans=""
+      printf '\n' >/dev/tty
+      case "$ans" in
+        y|Y|yes|YES) decision="reset" ;;
+        # Default N is load-bearing: silently wiping a user's data on every
+        # rerun would be a footgun. Don't flip without a release-note plan.
+        *)           decision="skip"  ;;
+      esac
+      # Mirror to stderr so audit logs (CI, tee'd installs) preserve choice.
+      printf '[reset] user choice: %s\n' "$decision" >&2
+    else
+      printf '[info] existing install detected at %s — skipping wipe (no TTY). Pass --reset to force.\n' "$home" >&2
+      decision="skip"
+    fi
+  fi
+
+  if [ "$decision" = "skip" ]; then
+    printf '[info] keeping existing data at %s\n' "$home" >&2
+    return 0
+  fi
+
+  # decision=reset
+  if ! resolve_openclaw_binary; then
+    if [ "$RESET" -eq 1 ]; then
+      die "cannot reset: openclaw binary not found (config at $cfg is orphaned). Manual cleanup: rm -rf $home, then re-run install.sh"
+    fi
+    printf '[warn] config at %s but no openclaw binary on PATH — skipping reset\n' "$cfg" >&2
+    return 0
+  fi
+
+  if [ "$DRY_RUN" -eq 1 ]; then
+    printf '[dry-run] would snapshot %s and run: openclaw reset --scope full --yes --non-interactive\n' "$cfg" >&2
+    return 0
+  fi
+
+  # Snapshot config before destructive call so the user has a recovery hint
+  # if the upstream installer fails after wipe (token, skills, credentials
+  # are still lost — but the json blueprint that built them survives).
+  local ts snap
+  ts="$(date -u +%Y%m%dT%H%M%SZ)"
+  snap="$cfg.pre-reset.bak.$ts"
+  if cp -p "$cfg" "$snap" 2>/dev/null; then
+    printf '[reset] config snapshot saved to %s\n' "$snap" >&2
+  else
+    snap=""
+    printf '[warn] could not snapshot %s before reset (continuing anyway)\n' "$cfg" >&2
+  fi
+
+  printf '[reset] running openclaw reset --scope full --yes --non-interactive\n' >&2
+  if ! openclaw reset --scope full --yes --non-interactive; then
+    if [ -n "$snap" ]; then
+      die "openclaw reset failed. Pre-reset config snapshot: $snap. Manual cleanup: openclaw uninstall --all --yes --non-interactive && rm -rf $home, then re-run install.sh"
+    fi
+    die "openclaw reset failed. Manual cleanup: openclaw uninstall --all --yes --non-interactive && rm -rf $home, then re-run install.sh"
+  fi
+  printf '[reset] done\n' >&2
 }
 
 run_official_installer() {
@@ -446,6 +588,11 @@ on_success() {
 
 main() {
   parse_args "$@"
+  # Capture the real install dir BEFORE the dry-run remap clobbers it, so
+  # maybe_reset_existing_install probes the user's actual ~/.openclaw
+  # rather than the throwaway mktemp dir. Without this, --dry-run --reset
+  # would silently report "no config found" on every machine.
+  ORIGINAL_OPENCLAW_HOME="$OPENCLAW_HOME"
   if [ "$DRY_RUN" -eq 1 ] && [ -z "${OPENCLAW_HOME_OVERRIDE:-}" ] && [ "$OPENCLAW_HOME" = "$HOME/.openclaw" ]; then
     OPENCLAW_HOME="$(mktemp -d 2>/dev/null || mktemp -d -t openclaw)"
     printf '[dry-run] OPENCLAW_HOME=%s\n' "$OPENCLAW_HOME" >&2
@@ -453,6 +600,7 @@ main() {
   preflight
   collect_secrets
   validate_secrets
+  maybe_reset_existing_install
   if [ "$DRY_RUN" -eq 1 ]; then
     printf '[dry-run] skipping official installer\n' >&2
   else

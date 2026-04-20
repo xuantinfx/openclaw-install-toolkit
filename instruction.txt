@@ -97,6 +97,11 @@ Either way, after a few seconds the installer will stop and ask two questions:
   Anthropic API key:
       Paste the key that starts with sk-ant-... and press Enter.
 
+If you've installed OpenClaw on this Mac before, the installer also asks
+whether to wipe the old data first. Just press Enter to keep your existing
+data — the installer will reuse it. Type  y  and Enter only if you want a
+clean reinstall (this clears your saved bot connection and settings).
+
 Wait for it to finish. When it's done you'll see a success message.
 The skills are installed automatically as part of this step — no extra command.
 

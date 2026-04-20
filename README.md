@@ -53,7 +53,11 @@ Anything in `skills/*/` on `main` is world-readable once pushed. Review the diff
 |---|---|---|
 | `--port N` | `18789` | Gateway port written to `~/.openclaw/openclaw.json` |
 | `--dry-run` | off | Validate inputs, skip installer + daemon. Useful for CI. |
+| `--reset` | off | Wipe existing install via `openclaw reset --scope full` before reinstalling. Skips the y/N prompt. |
+| `--keep-data` | off | Skip the wipe prompt and keep existing install data. Mutually exclusive with `--reset`. |
 | `--help` | — | Print usage |
+
+When an existing install is detected (`~/.openclaw/openclaw.json` exists), the installer prompts y/N to wipe before reinstalling. Default = N (keep). With no TTY (`curl|bash`), the wipe is auto-skipped — pass `--reset` to force.
 
 ## Environment overrides
 
@@ -64,6 +68,8 @@ Anything in `skills/*/` on `main` is world-readable once pushed. Review the diff
 | `OPENCLAW_INSTALL_URL` | Override upstream installer URL |
 | `OPENCLAW_HOME` | Override install dir (default `~/.openclaw`) |
 | `OPENCLAW_NO_RC_EDIT` | Skip appending the PATH line to `~/.zshrc` / `~/.bash_profile` |
+| `OPENCLAW_RESET` | Set to `1` to behave as if `--reset` was passed (CI / scripted reinstall) |
+| `OPENCLAW_KEEP_DATA` | Set to `1` to behave as if `--keep-data` was passed |
 
 ## Security notes
 
