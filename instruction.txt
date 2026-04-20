@@ -11,6 +11,9 @@ You will use:
 
 The whole setup takes about 10-15 minutes.
 
+Sharing this Mac with someone else? After reading this file, also see
+instruction-multi-user.txt for what changes when two people install.
+
 
 BEFORE YOU START — get these two things ready
 ---------------------------------------------

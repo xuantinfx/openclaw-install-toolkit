@@ -25,6 +25,10 @@ if [ -n "${BASH_SOURCE[0]:-}" ] && [ -f "${BASH_SOURCE[0]}" ]; then
 fi
 
 PORT="$DEFAULT_PORT"
+# 1 when the user passed --port explicitly. Gates reinstall-stability
+# (reusing a port from an existing openclaw.json) so an explicit override
+# always wins over a stored value, even if the override equals DEFAULT_PORT.
+EXPLICIT_PORT=0
 DRY_RUN=0
 BOT_USERNAME=""
 RESET=0
@@ -54,7 +58,8 @@ usage() {
 Usage: install.sh [--port N] [--dry-run] [--reset|--keep-data] [--help]
 
 Options:
-  --port N       Gateway port to write into openclaw.json (default 18789)
+  --port N       Preferred gateway port (default 18789). If busy, the
+                 installer probes N..N+9 and picks the first free one.
   --dry-run      Collect inputs and show generated config; skip installer + daemon
   --reset        Wipe existing install (openclaw reset --scope full) without prompting
   --keep-data    Keep existing install data without prompting (default under no-TTY)
@@ -71,6 +76,9 @@ Environment:
 When an existing install is detected ($OPENCLAW_HOME/openclaw.json), the
 installer prompts y/N to wipe before reinstalling. Default = N (keep data).
 Without a TTY (e.g. curl|bash), the wipe is auto-skipped — pass --reset to force.
+
+Multi-user Macs: each macOS account gets its own gateway port automatically.
+See instruction-multi-user.txt for the full walk-through.
 EOF
 }
 
@@ -85,10 +93,12 @@ parse_args() {
       --port)
         [ $# -ge 2 ] || die "--port requires a value"
         PORT="$2"
+        EXPLICIT_PORT=1
         shift 2
         ;;
       --port=*)
         PORT="${1#--port=}"
+        EXPLICIT_PORT=1
         shift
         ;;
       --dry-run)
@@ -167,6 +177,80 @@ preflight() {
     if (cd "$probe" && git rev-parse --is-inside-work-tree >/dev/null 2>&1); then
       die "$OPENCLAW_HOME is inside a git worktree; refusing to write plaintext secrets there"
     fi
+  fi
+}
+
+# Probe a TCP port on loopback via the bash /dev/tcp builtin. Success
+# opening the socket means a listener answered => port is busy. Connection
+# refused => port is free. Keeps us dependency-free (no lsof/nc required).
+is_port_free() {
+  local port="$1"
+  if (exec 3<>/dev/tcp/127.0.0.1/"$port") 2>/dev/null; then
+    exec 3<&- 2>/dev/null    # close probe fd
+    return 1                 # busy
+  fi
+  return 0                   # free
+}
+
+# Scan `tries` ports starting at `start`; print the first free one.
+# Returns non-zero if none are free in range (caller decides how to die).
+find_free_port() {
+  local start="$1" tries="${2:-10}" i=0 p
+  while [ "$i" -lt "$tries" ]; do
+    p=$((start + i))
+    [ "$p" -gt 65535 ] && break
+    if is_port_free "$p"; then
+      printf '%s\n' "$p"
+      return 0
+    fi
+    i=$((i + 1))
+  done
+  return 1
+}
+
+# Resolve the final gateway port before config write / daemon start.
+# Order of preference: (1) still-free port from existing openclaw.json when
+# --port wasn't overridden (reinstall stability), (2) scan-and-bump from
+# the requested port. Applies to both default and explicit --port per the
+# design brief — always probe, warn+bump if busy.
+resolve_port() {
+  local requested="$PORT"
+  local home="${ORIGINAL_OPENCLAW_HOME:-$OPENCLAW_HOME}"
+  local cfg="$home/openclaw.json"
+  local existing=""
+
+  if [ "$EXPLICIT_PORT" -eq 0 ] && [ -f "$cfg" ]; then
+    existing="$(jq -r '.gateway.port // empty' "$cfg" 2>/dev/null || true)"
+    # Drop anything that isn't a plain positive integer in the valid TCP
+    # range. A tampered / hand-edited config with "port": 0, "port": 70000,
+    # or "port": "\"; rm -rf /\"" must not flow into is_port_free / PORT.
+    case "$existing" in
+      ''|*[!0-9]*) existing="" ;;
+    esac
+    if [ -n "$existing" ] && { [ "$existing" -lt 1 ] || [ "$existing" -gt 65535 ]; }; then
+      existing=""
+    fi
+    if [ -n "$existing" ] && is_port_free "$existing"; then
+      if [ "$existing" != "$requested" ]; then
+        printf '[port] reusing previously-assigned port %s (from %s)\n' "$existing" "$cfg" >&2
+      fi
+      PORT="$existing"
+      return 0
+    fi
+  fi
+
+  local chosen
+  if chosen="$(find_free_port "$requested" 10)"; then
+    if [ "$chosen" != "$requested" ]; then
+      printf '[port] %s is busy; using %s instead\n' "$requested" "$chosen" >&2
+    fi
+    PORT="$chosen"
+  else
+    # Clamp at 65535 so the message reflects what was actually probed —
+    # find_free_port breaks early when the candidate would overflow.
+    local end=$((requested + 9))
+    [ "$end" -gt 65535 ] && end=65535
+    die "no free port in $requested-$end. Check 'lsof -iTCP:$requested-$end -sTCP:LISTEN' and free one up."
   fi
 }
 
@@ -601,6 +685,7 @@ main() {
   collect_secrets
   validate_secrets
   maybe_reset_existing_install
+  resolve_port
   if [ "$DRY_RUN" -eq 1 ]; then
     printf '[dry-run] skipping official installer\n' >&2
   else
