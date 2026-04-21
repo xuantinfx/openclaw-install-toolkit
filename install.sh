@@ -72,6 +72,7 @@ Environment:
   OPENCLAW_HOME          Override install dir (default: $HOME/.openclaw)
   OPENCLAW_RESET=1       Same as --reset
   OPENCLAW_KEEP_DATA=1   Same as --keep-data
+  OPENCLAW_NO_DASHBOARD=1  Skip auto-opening the Control UI after install
 
 When an existing install is detected ($OPENCLAW_HOME/openclaw.json), the
 installer prompts y/N to wipe before reinstalling. Default = N (keep data).
@@ -660,12 +661,30 @@ ensure_openclaw_on_path() {
   printf '[install] (new Terminal windows will pick it up automatically)\n' >&2
 }
 
+open_dashboard() {
+  # Launch the Control UI in the user's default browser as the last install
+  # step. Best-effort: on headless / SSH / CI boxes the launch may fail, so
+  # we absorb the error and print a manual fallback. Opt-out:
+  # OPENCLAW_NO_DASHBOARD=1 (mirrors the OPENCLAW_NO_RC_EDIT convention).
+  if [ "${OPENCLAW_NO_DASHBOARD:-0}" = "1" ]; then
+    printf '[dashboard] OPENCLAW_NO_DASHBOARD=1 — skipping auto-open.\n' >&2
+    printf '[dashboard] open manually later with: openclaw dashboard\n' >&2
+    return 0
+  fi
+  printf '[dashboard] opening Control UI in your browser...\n' >&2
+  if ! openclaw dashboard; then
+    printf '[dashboard] auto-open failed — try running: openclaw dashboard\n' >&2
+  fi
+}
+
 on_success() {
   printf '\n'
   printf '  [OK] gateway healthy on 127.0.0.1:%s\n' "$PORT"
   printf '  [OK] Telegram bot reachable: @%s\n' "$BOT_USERNAME"
   printf '  [OK] Anthropic API key valid\n'
   printf '\nAll green. Message @%s on Telegram to start chatting.\n' "$BOT_USERNAME"
+  printf 'Your OpenClaw Control UI should have opened in your browser.\n'
+  printf 'Re-open any time with: openclaw dashboard\n'
   printf '\nWARNING: %s contains your bot token and API key in plaintext (mode 0600).\n' "$OPENCLAW_HOME/openclaw.json"
   printf '         Do not commit, share, or back up unencrypted.\n'
 }
@@ -705,6 +724,7 @@ main() {
   verify_telegram
   verify_anthropic
   install_local_skills
+  open_dashboard
   on_success
 }
 

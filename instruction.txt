@@ -108,6 +108,12 @@ clean reinstall (this clears your saved bot connection and settings).
 Wait for it to finish. When it's done you'll see a success message.
 The skills are installed automatically as part of this step — no extra command.
 
+At the very end the installer will open your OpenClaw Control UI in your
+default browser automatically. You can close that window for now and come
+back to it later; Steps 3-7 below are all done through Telegram, not the UI.
+(If you'd rather not have a browser tab pop up, re-run the installer with
+OPENCLAW_NO_DASHBOARD=1 in front of it.)
+
 
 STEP 3 — Say hi to your bot
 ---------------------------
