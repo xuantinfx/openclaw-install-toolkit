@@ -152,21 +152,85 @@ require_cmd() {
   command -v "$cmd" >/dev/null 2>&1 || die "missing required command: $cmd — $hint"
 }
 
+# Download a known-good jq into $OPENCLAW_HOME/bin and amend PATH if the
+# system has no usable jq. Pre-Sequoia macOS (Sonoma, Ventura, older) and
+# bare Linux boxes routinely ship without jq; asking a non-technical user
+# to "brew install jq" when they also have no Homebrew is a dead end.
+# Best-effort: we fall through to the caller's require_cmd (with its
+# improved hint) if the download fails for any reason.
+JQ_VERSION="jq-1.7.1"
+bootstrap_jq_if_missing() {
+  # Valid jq already on PATH — nothing to do.
+  if command -v jq >/dev/null 2>&1 && jq --version >/dev/null 2>&1; then
+    return 0
+  fi
+
+  local asset_name url
+  case "$(uname -sm 2>/dev/null)" in
+    "Darwin arm64")   asset_name="jq-macos-arm64" ;;
+    "Darwin x86_64")  asset_name="jq-macos-amd64" ;;
+    "Linux x86_64")   asset_name="jq-linux-amd64" ;;
+    "Linux aarch64")  asset_name="jq-linux-arm64" ;;
+    *) return 1 ;;
+  esac
+  url="https://github.com/jqlang/jq/releases/download/${JQ_VERSION}/${asset_name}"
+
+  local dest_dir="$OPENCLAW_HOME/bin"
+  if ! mkdir -p "$dest_dir" 2>/dev/null; then
+    printf '[bootstrap] cannot create %s — skipping jq auto-install\n' "$dest_dir" >&2
+    return 1
+  fi
+  local dest="$dest_dir/jq"
+
+  printf '[bootstrap] jq not found; downloading %s (%s) to %s...\n' "$JQ_VERSION" "$asset_name" "$dest" >&2
+  if ! curl -fsSL --proto '=https' --tlsv1.2 --max-time 60 "$url" -o "$dest.tmp"; then
+    rm -f "$dest.tmp" 2>/dev/null
+    printf '[bootstrap] download failed (url: %s)\n' "$url" >&2
+    return 1
+  fi
+  chmod +x "$dest.tmp" 2>/dev/null || { rm -f "$dest.tmp"; return 1; }
+  mv "$dest.tmp" "$dest" 2>/dev/null || { rm -f "$dest.tmp"; return 1; }
+
+  # Prepend bin dir to PATH for this script run. Persistent PATH happens
+  # later in ensure_openclaw_on_path (same dir), so future terminals
+  # inherit jq alongside openclaw.
+  PATH="$dest_dir:$PATH"
+  export PATH
+  hash -r 2>/dev/null || true
+
+  if ! jq --version >/dev/null 2>&1; then
+    printf '[bootstrap] downloaded jq binary at %s is not executable on this machine\n' "$dest" >&2
+    return 1
+  fi
+  printf '[bootstrap] jq ready at %s\n' "$dest" >&2
+  return 0
+}
+
 preflight() {
   local os
   os="$(detect_os)"
 
   local jq_hint curl_hint
   if [ "$os" = "Darwin" ]; then
-    jq_hint="install with: brew install jq"
-    curl_hint="install with: brew install curl"
+    # Pre-Sequoia (< 15) Macs ship without jq. The hint doubles as
+    # "install Homebrew first" guidance since many fresh Macs also lack
+    # brew. Shown only if bootstrap_jq_if_missing also failed.
+    jq_hint="auto-download failed. Install manually: install Homebrew (https://brew.sh) then run 'brew install jq', or grab a binary from https://jqlang.org/download and re-run install.sh"
+    curl_hint="install with: brew install curl (or Homebrew itself from https://brew.sh)"
   else
-    jq_hint="install with: sudo apt install jq (or your distro equivalent)"
+    jq_hint="auto-download failed. Install manually: 'sudo apt install jq' (Debian/Ubuntu), 'sudo dnf install jq' (Fedora), or see https://jqlang.org/download"
     curl_hint="install with: sudo apt install curl (or your distro equivalent)"
   fi
 
   require_cmd curl "$curl_hint"
-  require_cmd jq "$jq_hint"
+  bootstrap_jq_if_missing || true
+  # Verify jq is functional (not merely present). A fake/broken jq on PATH
+  # otherwise satisfies require_cmd but fails later inside backup_and_write_config
+  # with a confusing error. Running `jq --version` reliably detects both
+  # "absent" and "broken" cases.
+  if ! jq --version >/dev/null 2>&1; then
+    die "missing required command: jq — $jq_hint"
+  fi
 
   # Walk up to the nearest existing ancestor so we catch cases where
   # $OPENCLAW_HOME doesn't exist yet but its parent is inside a git repo.
@@ -623,41 +687,67 @@ ensure_openclaw_on_path() {
     line="export PATH=\"$bin_dir:\$PATH\""
   fi
 
-  # Pick rc file strictly based on login shell. Only zsh and bash get
-  # automatic edits — everything else (fish, ksh, sh, nushell, …) gets a
-  # manual instruction so we don't silently write to a file the user's
-  # shell never sources.
-  local rc
+  # Write to every Bourne-family rc the user might actually source, not just
+  # the one implied by $SHELL. Rationale: many macOS users have $SHELL=/bin/zsh
+  # (login shell) yet launch bash from Terminal.app, or vice versa. Writing
+  # to a single file based on $SHELL leaves them with "command not found" on
+  # the other shell. Rules:
+  #   • Always ensure ~/.zshrc has the line (zsh is macOS default since 10.15,
+  #     create if missing — most Macs have one or will expect one).
+  #   • ALSO write to ~/.bash_profile and ~/.bashrc if they already exist
+  #     (don't create empty files just for an export a non-bash user won't
+  #     source; this respects users who intentionally deleted bashrc).
+  # Each write is idempotent (grep-skip if line present) and best-effort.
+  # Positional iteration over the candidate set — works identically in
+  # bash 3.2+ and zsh (avoids zsh's non-POSIX word-splitting default).
+  local rc updated_any=0
+  for rc in "$HOME/.zshrc" "$HOME/.bash_profile" "$HOME/.bashrc"; do
+    # Gate bash files to "only process if pre-existing" so we don't
+    # create empty bashrc/bash_profile for users who deliberately don't
+    # use bash. .zshrc is always processed — create if missing.
+    case "$rc" in
+      *.zshrc) ;;
+      *) [ -f "$rc" ] || continue ;;
+    esac
+    if [ ! -e "$rc" ]; then
+      : > "$rc" 2>/dev/null || { printf '[install] could not create %s — skipping\n' "$rc" >&2; continue; }
+    fi
+    if grep -qxF "$line" "$rc" 2>/dev/null; then
+      continue   # already present, leave alone
+    fi
+    if printf '\n# Added by openclaw-install-toolkit\n%s\n' "$line" >> "$rc" 2>/dev/null; then
+      printf '[install] appended PATH export to %s\n' "$rc" >&2
+      updated_any=1
+    else
+      printf '[install] could not write to %s — skipping\n' "$rc" >&2
+    fi
+  done
+
+  # Fish / nushell / ksh users: syntax differs. Print a manual hint rather
+  # than leave them confused when their shell can't source our .zshrc line.
   case "${SHELL:-}" in
-    */zsh|zsh)    rc="$HOME/.zshrc" ;;
-    */bash|bash)  rc="$HOME/.bash_profile" ;;
-    *)
-      printf '[install] unrecognized shell (SHELL=%s) — not editing rc files.\n' "${SHELL:-<unset>}" >&2
-      printf '[install] add this to your shell'"'"'s startup file manually:\n' >&2
+    */fish|fish)
+      printf '[install] fish detected — add to ~/.config/fish/config.fish manually:\n' >&2
       # shellcheck disable=SC2016
-      printf '[install]     export PATH="%s:$PATH"\n' "$bin_dir" >&2
-      return 0
+      printf '[install]     set -gx PATH "%s" $PATH\n' "$bin_dir" >&2
+      ;;
+    */nu|nu|*/nushell|nushell)
+      printf '[install] nushell detected — add to your env.nu manually:\n' >&2
+      # shellcheck disable=SC2016
+      printf '[install]     $env.PATH = ($env.PATH | prepend "%s")\n' "$bin_dir" >&2
       ;;
   esac
 
-  # Ensure rc file exists (create empty if missing); skip if we can't write.
-  [ -e "$rc" ] || : > "$rc" || { printf '[install] could not create %s — skipping\n' "$rc" >&2; return 0; }
-
-  if grep -qxF "$line" "$rc" 2>/dev/null; then
-    return 0   # already present, leave alone
-  fi
-  printf '\n# Added by openclaw-install-toolkit\n%s\n' "$line" >> "$rc" || {
-    printf '[install] could not write to %s — skipping\n' "$rc" >&2
+  if [ "$updated_any" -eq 0 ]; then
     return 0
-  }
-  printf '[install] appended PATH export to %s\n' "$rc" >&2
+  fi
 
   # Make openclaw callable in THIS terminal session too (best-effort; the
   # parent shell that ran `curl | bash` is unreachable, but any downstream
   # `openclaw` call inside this script works because run_official_installer
   # already amended PATH).
   printf '[install] run this in your current Terminal to use openclaw now:\n' >&2
-  printf '[install]     source %s\n' "$rc" >&2
+  printf '[install]     source %s\n' "$HOME/.zshrc" >&2
   printf '[install] (new Terminal windows will pick it up automatically)\n' >&2
 }
 

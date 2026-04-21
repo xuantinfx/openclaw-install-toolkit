@@ -72,7 +72,10 @@ You received a file called  openclaw-toolkit.zip  via message.
 
 You can start the installer in one of two ways.
 
-Way A — drag-to-Terminal (recommended, always works):
+>>> Not sure which to pick? Use Way A. It never triggers the
+    "unidentified developer" warning that may appear with Way B. <<<
+
+Way A — drag-to-Terminal (RECOMMENDED, no pop-up warnings):
 
   1. Make sure the Terminal window from STEP 1 is open.
   2. Click in the Terminal window. Type the four characters  bash  then
@@ -81,16 +84,22 @@ Way A — drag-to-Terminal (recommended, always works):
      window. The file's full path will appear right after "bash ".
   4. Now press Enter.
 
-Way B — double-click (simpler, may need one extra click the first time):
+Way B — double-click (simpler, but the first run triggers a macOS
+        Gatekeeper warning you have to click through):
 
   1. In Finder, double-click  install.command
-  2. A new Terminal window will open and start the installer.
-
-     First time only: macOS may say "install.command cannot be opened
-     because it is from an unidentified developer." If that happens,
-     close the warning, right-click (or Control-click) on install.command
-     in Finder, choose  Open , then click  Open  in the confirmation dialog.
-     macOS will remember your choice after that.
+  2. The first time you do this, macOS will almost certainly show:
+        "install.command cannot be opened because it is from an
+         unidentified developer."
+     This is NORMAL — the file is safe, it just isn't signed by Apple.
+     To get past it:
+        a) Close the warning.
+        b) Back in Finder, right-click (or Control-click) on
+           install.command.
+        c) Choose  Open  from the menu.
+        d) Click  Open  in the confirmation dialog.
+     macOS will remember your choice. Future runs open directly.
+  3. A new Terminal window will open and start the installer.
 
 Either way, after a few seconds the installer will stop and ask two questions:
 
