@@ -2,9 +2,9 @@
 # build-delivery.sh — rebuild customer delivery bundles from repo source.
 #
 # Produces:
-#   delivery/single-user/   (install.sh, install.command, README.md, skills/,
+#   delivery/single-user/   (install.sh, install.command, skills/,
 #                            instruction.pdf — personalized per client)
-#   delivery/multi-user/    (same + instruction-multi-user.pdf)
+#   delivery/multi-user/    (same but with instruction-multi-user.pdf)
 #   delivery/openclaw-toolkit-single-user-<slug>.zip
 #   delivery/openclaw-toolkit-multi-user-<slug>.zip
 #
@@ -32,7 +32,7 @@ cd "$REPO_ROOT"
 command -v node >/dev/null 2>&1 || { echo "error: 'node' not found in PATH" >&2; exit 1; }
 
 # Verify source files exist before we start wiping the delivery tree.
-required=(install.sh install.command README.md \
+required=(install.sh install.command \
           instruction.md.tmpl instruction-multi-user.md.tmpl skills \
           scripts/render-pdf.mjs scripts/legal-header.md.tmpl scripts/pdf-style.css)
 for f in "${required[@]}"; do
@@ -80,7 +80,7 @@ rm -rf delivery/single-user delivery/multi-user
 rm -f  delivery/openclaw-toolkit-single-user-*.zip delivery/openclaw-toolkit-multi-user-*.zip
 mkdir -p delivery/single-user delivery/multi-user
 
-common=(install.sh install.command README.md)
+common=(install.sh install.command)
 
 cp "${common[@]}" delivery/single-user/
 cp -R skills delivery/single-user/
