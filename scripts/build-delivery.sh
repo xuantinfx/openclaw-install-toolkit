@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 # build-delivery.sh — rebuild customer delivery bundles from repo source.
 #
-# Produces:
-#   delivery/single-user/   (install.sh, install.command, skills/,
-#                            instruction.pdf — personalized per client)
-#   delivery/multi-user/    (same but with instruction-multi-user.pdf)
+# Produces (folder name matches the zip stem so the user's unzip lands in a
+# predictable, self-describing directory):
+#   delivery/openclaw-toolkit-single-user-<slug>/
+#   delivery/openclaw-toolkit-multi-user-<slug>/
 #   delivery/openclaw-toolkit-single-user-<slug>.zip
 #   delivery/openclaw-toolkit-multi-user-<slug>.zip
 #
@@ -75,40 +75,47 @@ slug="$(node -e '
 
 echo "[build] client=\"$client_name\" slug=\"$slug\" build=\"$build_id\""
 
-# Clean previous build so stale files don't leak into the zip.
+# Bundle directory names = zip stem, so `unzip` lands users in a folder named
+# after the file they double-clicked. Avoids the "where did `single-user/` come
+# from?" confusion.
+single_dir="openclaw-toolkit-single-user-${slug}"
+multi_dir="openclaw-toolkit-multi-user-${slug}"
+
+# Clean previous build so stale files don't leak into the zip. Also sweep the
+# pre-rename layout (`single-user/`, `multi-user/`) and any older slug builds.
 rm -rf delivery/single-user delivery/multi-user
-rm -f  delivery/openclaw-toolkit-single-user-*.zip delivery/openclaw-toolkit-multi-user-*.zip
-mkdir -p delivery/single-user delivery/multi-user
+rm -rf delivery/openclaw-toolkit-single-user-* delivery/openclaw-toolkit-multi-user-*
+mkdir -p "delivery/$single_dir" "delivery/$multi_dir"
 
 common=(install.sh install.command)
 
-cp "${common[@]}" delivery/single-user/
-cp -R skills delivery/single-user/
+cp "${common[@]}" "delivery/$single_dir/"
+cp -R skills "delivery/$single_dir/"
 
-cp "${common[@]}" delivery/multi-user/
-cp -R skills delivery/multi-user/
+cp "${common[@]}" "delivery/$multi_dir/"
+cp -R skills "delivery/$multi_dir/"
 
 node scripts/render-pdf.mjs \
   --template instruction.md.tmpl \
-  --out delivery/single-user/instruction.pdf \
+  --out "delivery/$single_dir/instruction.pdf" \
   --client "$client_name" --date "$today" --build "$build_id"
 
 node scripts/render-pdf.mjs \
   --template instruction-multi-user.md.tmpl \
-  --out delivery/multi-user/instruction-multi-user.pdf \
+  --out "delivery/$multi_dir/instruction-multi-user.pdf" \
   --client "$client_name" --date "$today" --build "$build_id"
 
-chmod +x delivery/single-user/install.sh  delivery/single-user/install.command
-chmod +x delivery/multi-user/install.sh   delivery/multi-user/install.command
+chmod +x "delivery/$single_dir/install.sh" "delivery/$single_dir/install.command"
+chmod +x "delivery/$multi_dir/install.sh"  "delivery/$multi_dir/install.command"
 
 if [ "$make_zip" -eq 1 ]; then
   command -v zip >/dev/null 2>&1 || { echo "error: 'zip' not found in PATH" >&2; exit 1; }
-  ( cd delivery && zip -qr "openclaw-toolkit-single-user-${slug}.zip" single-user )
-  ( cd delivery && zip -qr "openclaw-toolkit-multi-user-${slug}.zip"  multi-user  )
+  ( cd delivery && zip -qr "${single_dir}.zip" "$single_dir" )
+  ( cd delivery && zip -qr "${multi_dir}.zip"  "$multi_dir"  )
 fi
 
 printf '\nBuilt delivery bundles:\n'
-du -sh delivery/single-user delivery/multi-user
+du -sh "delivery/$single_dir" "delivery/$multi_dir"
 if [ "$make_zip" -eq 1 ]; then
   printf '\nZips:\n'
   ls -lh delivery/*.zip
