@@ -1,0 +1,26 @@
+{
+  "_comment": "Weekly theme rotation. Edit via setup wizard or manually. Day 0=Monday, 6=Sunday.",
+  "schedule": {
+    "0": {"category": "personal-injury", "theme": "know_your_rights", "label": "Monday"},
+    "1": {"category": "mortgage",        "theme": "hei_education",    "label": "Tuesday"},
+    "2": {"category": "personal-injury", "theme": "case_story",       "label": "Wednesday"},
+    "3": {"category": "mortgage",        "theme": "market_news",      "label": "Thursday"},
+    "4": {"category": "personal-injury", "theme": "faq",              "label": "Friday"},
+    "5": {"category": "mortgage",        "theme": "tips",             "label": "Saturday"},
+    "6": {"category": "both",            "theme": "industry_news",    "label": "Sunday"}
+  },
+  "available_themes": [
+    "know_your_rights",
+    "hei_education",
+    "case_story",
+    "market_news",
+    "faq",
+    "tips",
+    "industry_news"
+  ],
+  "available_categories": [
+    "personal-injury",
+    "mortgage",
+    "both"
+  ]
+}
