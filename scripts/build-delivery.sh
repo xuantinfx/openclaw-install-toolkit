@@ -9,7 +9,7 @@
 #   delivery/openclaw-toolkit-multi-user-<slug>.zip
 #
 # Client name sourcing: CLIENT_NAME env var (CI-friendly) OR interactive prompt.
-# Build id embedded in each PDF: YYYY-MM-DD-<shortSha>[-dirty].
+# Build id embedded in each PDF: YYYY-MM-DD-<shortSha>.
 #
 # Usage:
 #   scripts/build-delivery.sh            # rebuild both folders and zips
@@ -57,12 +57,10 @@ client_name="${client_name#"${client_name%%[![:space:]]*}"}"
 client_name="${client_name%"${client_name##*[![:space:]]}"}"
 [ -n "$client_name" ] || { echo "error: client name is empty" >&2; exit 2; }
 
-# Build ID: today + git short SHA + optional -dirty.
+# Build ID: today + git short SHA.
 short_sha="$(git rev-parse --short HEAD 2>/dev/null || echo nogit)"
-dirty=""
-if [ -n "$(git status --porcelain 2>/dev/null)" ]; then dirty="-dirty"; fi
 today="$(date +%Y-%m-%d)"
-build_id="${today}-${short_sha}${dirty}"
+build_id="${today}-${short_sha}"
 
 # Slug: Unicode NFKD → strip combining marks → lowercase → non-alnum to '-'.
 slug="$(node -e '
