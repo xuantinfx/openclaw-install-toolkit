@@ -9,3 +9,22 @@ pre code { background: transparent; padding: 0; }
 blockquote { margin: 0 0 1.4em 0; padding: 12px 16px; border-left: 4px solid #b85c00; background: #fff8ef; border-radius: 4px; }
 blockquote strong:first-child { color: #b85c00; letter-spacing: 0.05em; }
 hr { border: 0; border-top: 1px solid #ddd; margin: 1.6em 0; }
+
+/* Screenshots: scale to page width, never overflow the printable area, and
+   avoid splitting a single screenshot across two pages. Puppeteer renders
+   images at their natural pixel size by default — which is 1200–2500 px for
+   retina screenshots and would run off the page without these constraints. */
+img {
+  display: block;
+  max-width: 100%;
+  max-height: 150mm;           /* ~57% of A4 printable height — leaves room for surrounding text */
+  width: auto;
+  height: auto;
+  margin: 0.8em auto;
+  border: 1px solid #e2e2e2;
+  border-radius: 4px;
+  object-fit: contain;
+  page-break-inside: avoid;
+  break-inside: avoid;
+}
+p:has(> img) { page-break-inside: avoid; break-inside: avoid; }
