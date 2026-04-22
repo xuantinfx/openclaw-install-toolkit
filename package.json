@@ -5,6 +5,10 @@
   "scripts": {
     "build-delivery": "bash scripts/build-delivery.sh",
     "build-delivery:no-zip": "bash scripts/build-delivery.sh --no-zip",
-    "sync-skill": "bash scripts/sync-skill.sh"
+    "sync-skill": "bash scripts/sync-skill.sh",
+    "render-pdf": "node scripts/render-pdf.mjs"
+  },
+  "devDependencies": {
+    "md-to-pdf": "^5.2.4"
   }
 }
