@@ -12,15 +12,16 @@ const { values } = parseArgs({
     client:   { type: 'string' },
     date:     { type: 'string' },
     build:    { type: 'string' },
+    zip:      { type: 'string' },
   },
   strict: true,
 });
 
-const required = ['template', 'out', 'client', 'date', 'build'];
+const required = ['template', 'out', 'client', 'date', 'build', 'zip'];
 const missing = required.filter((k) => !values[k]);
 if (missing.length) {
   console.error(`render-pdf: missing required arg(s): ${missing.map((k) => '--' + k).join(', ')}`);
-  console.error('usage: render-pdf.mjs --template <md> --out <pdf> --client <name> --date <YYYY-MM-DD> --build <id>');
+  console.error('usage: render-pdf.mjs --template <md> --out <pdf> --client <name> --date <YYYY-MM-DD> --build <id> --zip <filename>');
   process.exit(2);
 }
 
@@ -45,7 +46,8 @@ try {
 const substitute = (s) => s
   .replaceAll('{{client_name}}',   values.client)
   .replaceAll('{{delivery_date}}', values.date)
-  .replaceAll('{{build_id}}',      values.build);
+  .replaceAll('{{build_id}}',      values.build)
+  .replaceAll('{{zip_name}}',      values.zip);
 
 const md = substitute(header) + '\n\n' + substitute(body);
 

@@ -1,12 +1,14 @@
 #!/usr/bin/env bash
 # build-delivery.sh — rebuild customer delivery bundles from repo source.
 #
-# Produces (folder name matches the zip stem so the user's unzip lands in a
-# predictable, self-describing directory):
-#   delivery/openclaw-toolkit-single-user-<slug>/
+# Produces (ship the .zip + matching .pdf together; folder name matches the
+# zip stem so the user's unzip lands in a predictable, self-describing dir):
+#   delivery/openclaw-toolkit-single-user-<slug>/      (bundle source)
 #   delivery/openclaw-toolkit-multi-user-<slug>/
 #   delivery/openclaw-toolkit-single-user-<slug>.zip
 #   delivery/openclaw-toolkit-multi-user-<slug>.zip
+#   delivery/openclaw-toolkit-single-user-<slug>.pdf   (separate instruction)
+#   delivery/openclaw-toolkit-multi-user-<slug>.pdf
 #
 # Client name sourcing: CLIENT_NAME env var (CI-friendly) OR interactive prompt.
 # Build id embedded in each PDF: YYYY-MM-DD-<shortSha>.
@@ -93,18 +95,23 @@ cp -R skills "delivery/$single_dir/"
 cp "${common[@]}" "delivery/$multi_dir/"
 cp -R skills "delivery/$multi_dir/"
 
+chmod +x "delivery/$single_dir/install.sh" "delivery/$single_dir/install.command"
+chmod +x "delivery/$multi_dir/install.sh"  "delivery/$multi_dir/install.command"
+
+# Render PDFs as siblings of the zip (not inside it) so they can be sent as a
+# separate attachment. The zip filename is embedded in the instruction so the
+# recipient sees the exact name they received.
 node scripts/render-pdf.mjs \
   --template instruction.md.tmpl \
-  --out "delivery/$single_dir/instruction.pdf" \
-  --client "$client_name" --date "$today" --build "$build_id"
+  --out "delivery/${single_dir}.pdf" \
+  --client "$client_name" --date "$today" --build "$build_id" \
+  --zip "${single_dir}.zip"
 
 node scripts/render-pdf.mjs \
   --template instruction-multi-user.md.tmpl \
-  --out "delivery/$multi_dir/instruction-multi-user.pdf" \
-  --client "$client_name" --date "$today" --build "$build_id"
-
-chmod +x "delivery/$single_dir/install.sh" "delivery/$single_dir/install.command"
-chmod +x "delivery/$multi_dir/install.sh"  "delivery/$multi_dir/install.command"
+  --out "delivery/${multi_dir}.pdf" \
+  --client "$client_name" --date "$today" --build "$build_id" \
+  --zip "${multi_dir}.zip"
 
 if [ "$make_zip" -eq 1 ]; then
   command -v zip >/dev/null 2>&1 || { echo "error: 'zip' not found in PATH" >&2; exit 1; }
@@ -115,6 +122,6 @@ fi
 printf '\nBuilt delivery bundles:\n'
 du -sh "delivery/$single_dir" "delivery/$multi_dir"
 if [ "$make_zip" -eq 1 ]; then
-  printf '\nZips:\n'
-  ls -lh delivery/*.zip
+  printf '\nDeliverables (ship zip + pdf together):\n'
+  ls -lh delivery/*.zip delivery/*.pdf
 fi
