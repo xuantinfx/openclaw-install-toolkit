@@ -1,63 +1,134 @@
+<!-- Mirrors instruction-multi-user.md.tmpl — keep section structure in sync. -->
+
 # How to set up your OpenClaw AI assistant on Telegram
 
-Hi! This guide helps you set up your own AI helper that you can chat with inside Telegram. No coding background needed. Just follow each step in order.
+Hi! This guide helps you set up your own AI helper that you can chat with inside Telegram. No coding background needed — just follow each step in order.
 
-You will use:
+You'll use:
 
-- Terminal on your Mac (the black window for typing commands — comes built in)
-- Telegram, on whichever device you already use it on (phone, tablet, desktop, or telegram.org in a browser — all work the same)
+- **Terminal** on your Mac (the black window for typing commands — comes built in).
+- **Telegram**, on whichever device you already use it on (phone, tablet, desktop, or [telegram.org](https://telegram.org) in a browser — all work the same).
 
-The whole setup takes about 10-15 minutes.
+The whole setup takes about 15–20 minutes. Most of that is collecting 5 keys in the next section — once you have those, the install itself is quick.
 
-## BEFORE YOU START — get these two things ready
+## BEFORE YOU START — get these 5 keys ready
 
-You'll need:
+Each key is free to start. **3 of them (Anthropic, Google AI, Brave) will ask you to add a credit card during signup**, but only Anthropic and Google AI actually charge you — usually a few cents per day for light use. Brave requires the card but stays on the free plan (you won't be billed).
 
-### A) A Telegram bot token
+Collect all 5 keys first, then come back here. Don't start the installer until the checklist at the end of this section is fully ticked.
 
-This is a password-like code that lets your computer talk to a Telegram bot.
+### 1 of 5 — Telegram bot token
 
-How to get one:
+**What it's for:** lets your computer talk to a Telegram bot.
+**Where to get it:** [BotFather on Telegram](https://t.me/BotFather)
+**What it looks like:** `1234567890:ABCdef...` (a number, a colon, then letters)
 
-1. Open Telegram (on your phone, desktop, or telegram.org — any of them).
-2. In the search bar, type `BotFather` and open the official account (blue checkmark next to the name).
-3. Send it the message: `/newbot`
-4. It will ask for a name and a username for your bot. Pick anything you like. (The username must end in "bot", e.g. "myhelperbot".)
-5. BotFather will send you back a long code that looks like:
+![Searching for BotFather in Telegram](images/01-botfather-search.png)
 
-   ```
-   1234567890:ABCdefGHIjklmnoPQRstuvWXYz-1234567890
-   ```
+1. Open Telegram, search `BotFather`, and tap the one with the blue checkmark.
+2. Send `/newbot`.
+3. Pick a display name, then a username ending in `bot` (e.g. `myhelperbot`).
+4. Copy the long code BotFather replies with. Save it somewhere safe.
 
-   That is your bot token. Copy it somewhere safe — you'll paste it later.
+![BotFather's reply with your bot token](images/02-botfather-token.png)
 
-### B) An Anthropic API key
+### 2 of 5 — Anthropic API key
 
-This is the key that lets your assistant use Claude (the AI brain).
+**What it's for:** lets your assistant use Claude (the AI brain).
+**Where to get it:** [console.anthropic.com](https://console.anthropic.com)
+**What it looks like:** `sk-ant-...`
 
-How to get one:
+![Anthropic sign-up page](images/03-anthropic-signup.png)
 
-1. Go to: https://console.anthropic.com
-2. Sign up or log in.
-3. Add a payment method (Anthropic charges per use — usually a few cents).
-4. Click "API Keys" in the menu, then "Create Key".
-5. Copy the key it shows you. It starts with `sk-ant-...` Save it somewhere safe — you can't see it again after closing the page.
+1. Go to [console.anthropic.com](https://console.anthropic.com) and sign up or log in.
+2. Add a payment method. Anthropic charges per use — usually a few cents per day of light use.
+3. Click **API Keys** in the menu, then **Create Key**.
+4. Copy the key it shows you. **You can't see it again after closing the page** — save it somewhere safe now.
 
-Got both? Great. Let's install.
+![Creating an Anthropic API key](images/04-anthropic-create-key.png)
+
+![Copy the key — it's shown only once](images/05-anthropic-key-reveal.png)
+
+### 3 of 5 — Firecrawl API key
+
+**What it's for:** lets your assistant read competitor websites.
+**Where to get it:** [firecrawl.dev](https://www.firecrawl.dev/)
+**What it looks like:** `fc-...`
+
+![Firecrawl dashboard](images/06-firecrawl-dashboard.png)
+
+1. Go to [firecrawl.dev](https://www.firecrawl.dev/) and sign up (GitHub or email).
+2. Once logged in, go to **Dashboard → API Keys**.
+3. Click **Create API Key** and copy the key it shows you.
+4. The free plan includes 500 credits per month — more than enough for normal use.
+
+![Creating a Firecrawl API key](images/07-firecrawl-create-key.png)
+
+### 4 of 5 — Google AI API key
+
+**What it's for:** lets your assistant generate images for posts.
+**Where to get it:** [Google AI Studio](https://aistudio.google.com/)
+**What it looks like:** `AIzaSy...`
+
+![Google AI Studio landing page](images/08-google-ai-studio.png)
+
+1. Go to [Google AI Studio](https://aistudio.google.com/) and sign in with your Google account.
+2. Click **Get API Key** in the sidebar, then **Create API Key**.
+3. Pick an existing Google Cloud project, or let it create a new one.
+4. Copy the key. It starts with `AIzaSy...`.
+5. Enable billing at [Google Cloud Billing](https://console.cloud.google.com/billing) — image generation requires it (typically a few cents per image).
+
+![Creating a Google AI API key](images/09-google-ai-create-key.png)
+
+### 5 of 5 — Brave Search API key
+
+**What it's for:** lets your assistant pull in trending news for content ideas.
+**Where to get it:** [api.search.brave.com](https://api.search.brave.com/)
+**What it looks like:** a long random string (no fixed prefix)
+
+![Brave Search API dashboard](images/10-brave-dashboard.png)
+
+1. Go to [api.search.brave.com](https://api.search.brave.com/) and click **Get Started for Free**.
+2. Create an account, then go to **Dashboard → API Keys**.
+3. Pick the **Free** plan (2,000 queries per month — plenty).
+4. Add a credit card when prompted. Brave requires it for account verification but **will not charge you** on the Free plan.
+5. Click **Generate API Key** and copy it.
+
+![Generating a Brave Search API key](images/11-brave-generate-key.png)
+
+### ✅ Ready to install?
+
+| # | Key                      | Looks like            | Got it? |
+|---|--------------------------|-----------------------|---------|
+| 1 | Telegram bot token       | `1234...:ABC...`      |   [ ]   |
+| 2 | Anthropic API key        | `sk-ant-...`          |   [ ]   |
+| 3 | Firecrawl API key        | `fc-...`              |   [ ]   |
+| 4 | Google AI API key        | `AIzaSy...`           |   [ ]   |
+| 5 | Brave Search API key     | long random string    |   [ ]   |
+
+If any row is empty, scroll back up and finish that one first.
+
+The **installer** asks for keys **#1 and #2** (in Step 2). The **bot** asks for keys **#3, #4, #5** later (in Step 6).
 
 ## STEP 1 — Open Terminal
 
 On your Mac:
 
-- Press Command + Space (opens Spotlight search).
+- Press **Command + Space** (opens Spotlight search).
 - Type: `Terminal`
-- Press Enter.
+- Press **Enter**.
+
+![Opening Spotlight with Cmd+Space](images/12-terminal-spotlight.png)
 
 A window with text will open. This is where you'll run the installer.
+
+![Terminal window open](images/13-terminal-open.png)
 
 ## STEP 2 — Unzip the toolkit and run the installer
 
 You received a file called `{{zip_name}}` via message.
+
+![The toolkit zip in Finder](images/14-finder-zip.png)
 
 1. In Finder, double-click the zip. macOS will unzip it into a folder.
 2. Open the folder. Inside you'll see at least these files:
@@ -66,54 +137,92 @@ You received a file called `{{zip_name}}` via message.
    install.sh
    install.command
    skills   (a sub-folder)
+   images   (a sub-folder with screenshots)
    ```
+
+![Unzipped toolkit folder](images/15-unzipped-folder.png)
 
 You can start the installer in one of two ways.
 
-> **Not sure which to pick? Use Way A.** It never triggers the "unidentified developer" warning that may appear with Way B.
+> **Not sure which to pick? Use Way A.** It never triggers the "unidentified developer" pop-up that may appear with Way B.
 
 ### Way A — drag-to-Terminal (RECOMMENDED, no pop-up warnings)
 
 1. Make sure the Terminal window from STEP 1 is open.
 2. Click in the Terminal window. Type the four characters `bash` then press the SPACE BAR once. Do NOT press Enter yet.
 3. Drag the file `install.sh` from the Finder folder into the Terminal window. The file's full path will appear right after `bash `.
-4. Now press Enter.
+4. Now press **Enter**.
 
-### Way B — double-click (simpler, but the first run triggers a macOS Gatekeeper warning you have to click through)
+![Dragging install.sh into Terminal](images/16-way-a-drag.png)
 
-1. In Finder, double-click `install.command`
+### Way B — double-click (simpler, but the first run triggers a macOS pop-up you have to click through)
+
+1. In Finder, double-click `install.command`.
 2. The first time you do this, macOS will almost certainly show:
 
    > "install.command cannot be opened because it is from an unidentified developer."
 
    This is NORMAL — the file is safe, it just isn't signed by Apple. To get past it:
 
-   a. Close the warning.
+   a. Close the pop-up.
    b. Back in Finder, right-click (or Control-click) on `install.command`.
-   c. Choose `Open` from the menu.
-   d. Click `Open` in the confirmation dialog.
+   c. Choose **Open** from the menu.
+   d. Click **Open** in the confirmation dialog.
 
    macOS will remember your choice. Future runs open directly.
+
 3. A new Terminal window will open and start the installer.
 
-Either way, after a few seconds the installer will stop and ask two questions:
+![Right-click → Open on install.command](images/17-way-b-rightclick.png)
 
-- **Telegram bot token:** Paste the long code from BotFather and press Enter.
-- **Anthropic API key:** Paste the key that starts with `sk-ant-...` and press Enter.
+![The "unidentified developer" pop-up](images/18-way-b-gatekeeper.png)
 
-If you've installed OpenClaw on this Mac before, the installer also asks whether to wipe the old data first. Just press Enter to keep your existing data — the installer will reuse it. Type `y` and Enter only if you want a clean reinstall (this clears your saved bot connection and settings).
+### When the installer asks for your keys
 
-Wait for it to finish. When it's done you'll see a success message. The skills are installed automatically as part of this step — no extra command.
+Either way, after a few seconds the installer will stop and ask two questions. Paste from your checklist:
 
-At the very end the installer will open your OpenClaw Control UI in your default browser automatically. You can close that window for now and come back to it later; Steps 3-7 below are all done through Telegram, not the UI. (If you'd rather not have a browser tab pop up, re-run the installer with `OPENCLAW_NO_DASHBOARD=1` in front of it.)
+- **Telegram bot token:** paste key **#1** → press **Enter**.
+- **Anthropic API key:** paste key **#2** → press **Enter**.
 
-## STEP 3 — Say hi to your bot
+![Installer running](images/19-installer-running.png)
 
-1. Open Telegram on whichever device is easiest for you (phone is fine).
-2. In the search bar, type the bot username you chose with BotFather, and tap your bot.
-3. Tap "Start" at the bottom, or just send it the message: `hi`
+If you've installed OpenClaw on this Mac before, the installer also asks whether to wipe the old data first. Just press **Enter** to keep your existing data — the installer will reuse it. Type `y` and Enter only if you want a clean reinstall (this clears your saved bot connection and settings).
 
-The bot will reply with something that looks like this:
+Wait for the installer to finish. When it's done you'll see a success message. The skills are installed automatically as part of this step — no extra command.
+
+![Installer success](images/20-installer-success.png)
+
+At the very end, a browser tab will open automatically — that's your **OpenClaw Control UI (dashboard)**. Don't close it; you'll use it in the next step.
+
+## STEP 3 — Find your OpenClaw dashboard
+
+The installer opened a browser tab titled **OpenClaw**. Switch to that tab now — it should still be open from Step 2. You don't need to do anything in it yet; just leave it open so you can glance at it while you set up the bot.
+
+![OpenClaw dashboard opened in browser](images/21-dashboard-opened.png)
+
+If the tab isn't there — you closed it, or the installer couldn't open it — go back to Terminal and run:
+
+⌨️ **Paste this into Terminal and press Enter:**
+
+```
+openclaw dashboard
+```
+
+That will reopen the dashboard.
+
+## STEP 4 — Say hi to your bot
+
+Open Telegram. In the search bar, type the bot username you chose with BotFather, and tap your bot.
+
+📲 **Copy this and send it to your bot:**
+
+```
+hi
+```
+
+![Sending "hi" to your bot](images/22-telegram-bot-greeting.png)
+
+The bot will reply with something like this:
 
 ```
 OpenClaw: access not configured.
@@ -124,66 +233,198 @@ Ask the bot owner to approve with:
 openclaw pairing approve telegram 6P25BBXP
 ```
 
-Don't worry — this is expected. It's asking you to prove you're the owner.
+![Bot's pairing-request reply](images/23-pairing-message.png)
 
-## STEP 4 — Approve yourself
+Don't worry — this is expected. The bot is asking you to prove you're the owner. The next step approves it.
 
-From the bot's message, copy the line that starts with:
+## STEP 5 — Approve yourself in Terminal
+
+Look at the bot's reply above — find the **Pairing code** line (an 8-character code). Copy that code.
+
+Go back to your Terminal window.
+
+⌨️ **Paste this into Terminal and press Enter** (replace `XXXXXXXX` with your actual pairing code):
 
 ```
-openclaw pairing approve telegram ...
+openclaw pairing approve telegram XXXXXXXX
 ```
 
-(Your code will be different from the example.)
+![Terminal showing successful approval](images/24-approval-success.png)
 
-Go back to Terminal, paste that line, and press Enter. It will confirm that you're approved.
+Terminal prints a success confirmation. Now send your bot any message — e.g. "hello" — and it will reply like a real assistant. You're paired.
 
-Now your Telegram bot is connected to the AI. Try sending it a message like "hello" — it should reply like a chat assistant.
+## STEP 6 — Set up the content monitor
 
-## STEP 5 — Set up the content monitor
+This step takes 5–10 minutes. The bot will ask **7 questions** one at a time. Have these ready before you start:
 
-Go back to Telegram and send this message to your bot:
+- **List of competitor websites** to monitor — or just use the default 56 pre-configured sites.
+- **Facebook + X (Twitter) login** — the bot opens a browser and you log in manually. Skip either if you want to set it up later.
+- **Sample post** showing your writing style (a post you've written, 100–500 words) — or skip to use a professional default.
+- **Your website domain** (e.g. `www.mysite.com`) — used for internal link suggestions. Skip if you don't have one yet.
+- **Preferred time + timezone** for the daily pipeline. Default is 7:00 AM Asia/Saigon.
+- **Keys #3, #4, #5** from your checklist (Firecrawl, Google AI, Brave).
+
+When you're ready, send this to your bot:
+
+📲 **Copy this and send it to your bot:**
 
 ```
 /content-monitor setup
 ```
 
-The bot will start walking you through the setup by asking questions.
+![Bot starting content-monitor setup](images/25-content-monitor-setup.png)
 
-## STEP 6 — Follow the bot's instructions
+The bot will ask the 7 questions in order. Here's what each one looks like and what to answer:
 
-Just answer the bot's questions in Telegram. It will tell you what to enter at each step. Take your time — if you're unsure, you can ask the bot to explain.
+### Question 1 of 7 — Competitor websites
+
+The bot asks what sites you want to monitor.
+
+📲 **To use the default 56 sites, send:**
+
+```
+use defaults
+```
+
+Or paste your own list — one URL per line, like this:
+
+```
+https://www.example-competitor-1.com
+https://www.example-competitor-2.com
+```
+
+The bot will then ask, for each URL, whether it's **personal-injury**, **mortgage**, or **other**.
+
+### Question 2 of 7 — Facebook + X login
+
+The bot opens a browser window and asks you to log into Facebook, then X (Twitter), so it can post on your behalf later. Log in manually in the browser, then tell the bot you're done.
+
+📲 **When you've finished logging in, send:**
+
+```
+done
+```
+
+📲 **Or to skip a platform (and set it up later):**
+
+```
+skip
+```
+
+### Question 3 of 7 — Writing style sample
+
+The bot asks for a sample of your writing so it can match your tone.
+
+📲 **To skip and use a default professional style, send:**
+
+```
+skip
+```
+
+Or paste a post you've written before (any length — 100–500 words works best). Or paste a URL to a page that has your writing, and the bot will read it.
+
+### Question 4 of 7 — Weekly content themes
+
+The bot shows you a 7-day theme schedule (Monday = "Know Your Rights", Tuesday = "HEI Education", etc.).
+
+📲 **To keep the defaults, send:**
+
+```
+keep defaults
+```
+
+Or say `customize` and the bot will walk you through each day one at a time.
+
+### Question 5 of 7 — API keys
+
+The bot asks for 3 keys, one at a time. You already have all three from the checklist in Section 2 — **paste all three, don't skip any**.
+
+- **Firecrawl API key:** paste key **#3**.
+- **Google AI API key:** paste key **#4**.
+- **Brave Search API key:** paste key **#5**.
+
+### Question 6 of 7 — Your website domain
+
+📲 **Paste your domain (no `https://` needed), like:**
+
+```
+www.mysite.com
+```
+
+📲 **Or skip if you don't have one yet:**
+
+```
+skip
+```
+
+### Question 7 of 7 — Daily schedule
+
+The bot asks what time to run the daily content pipeline.
+
+📲 **For the default (7:00 AM Asia/Saigon), send:**
+
+```
+default
+```
+
+Or enter your own time, like `7:00 AM` or `08:30`. The bot will then ask for your timezone — send `default` for Asia/Saigon, or enter one like `America/Los_Angeles` or `Europe/London`.
+
+### After all 7 questions
+
+The bot automatically sets up the workspace folders, does a first-time crawl of all competitor sites (takes a few minutes), and sends you a summary. You're done — the daily pipeline will now run on the schedule you picked.
 
 ## STEP 7 — Test that it works
 
-When setup is finished, send your bot this message:
+📲 **Copy this and send it to your bot:**
 
 ```
 manual test run
 ```
 
-You should see the monitor run and report back what it found. Done!
+![Bot reporting a successful test run](images/26-test-run-result.png)
 
-## TROUBLESHOOTING
+You should see the monitor run and report back what it found. Done! 🎉
+
+## Troubleshooting
 
 **"Permission denied" when running install.sh**
 
-- Use Way A from STEP 2: open Terminal, type `bash` and a space, then drag install.sh into Terminal, then press Enter.
-- This works even if the file lost its "executable" mark during unzip.
+- Use Way A from STEP 2: open Terminal, type `bash` and a space, then drag `install.sh` into Terminal, then press Enter.
+- This works even if the file lost its permission to run during unzip.
 
-**install.command won't open — "unidentified developer" warning**
+**install.command won't open — "unidentified developer" pop-up**
 
 - Right-click (or Control-click) on `install.command` in Finder.
-- Choose `Open`, then click `Open` in the confirmation dialog.
+- Choose **Open**, then click **Open** in the confirmation dialog.
 - macOS will remember your choice after that.
 
 **Unzipping didn't create a folder**
 
 - Try double-clicking the zip again in Finder — macOS's built-in Archive Utility is the most reliable. Avoid third-party unzip apps.
 
+**The browser tab with the dashboard didn't open**
+
+- Go to Terminal and run:
+
+  ⌨️ **Paste this into Terminal and press Enter:**
+
+  ```
+  openclaw dashboard
+  ```
+
+**I don't want the dashboard to auto-open on install**
+
+- Re-run the installer with this in front:
+
+  ⌨️ **Paste this into Terminal and press Enter** (replace the path with your actual install.sh path):
+
+  ```
+  OPENCLAW_NO_DASHBOARD=1 bash /path/to/install.sh
+  ```
+
 **The bot doesn't reply**
 
-- Make sure you completed Step 4 (approval).
+- Make sure you completed STEP 5 (approval).
 - Check that you're messaging the right bot (the one you made with BotFather).
 
 **"invalid Telegram bot token format"**
@@ -193,8 +434,8 @@ You should see the monitor run and report back what it found. Done!
 
 **"invalid Anthropic API key"**
 
-- The key must start with `sk-ant-`
-- Re-copy it from console.anthropic.com and try again.
+- The key must start with `sk-ant-`.
+- Re-copy it from [console.anthropic.com](https://console.anthropic.com) and try again.
 
 **"skills/ not found next to install.sh"**
 
@@ -205,6 +446,35 @@ You should see the monitor run and report back what it found. Done!
 
 - Copy the error message and ask for help.
 
-## KEEP THESE SAFE
+## 📖 What you can say to your bot
 
-Your Telegram bot token and Anthropic API key are like passwords. Don't share them publicly (in screenshots, chats, or emails). If you think one leaked, regenerate it on BotFather / console.anthropic.com.
+A quick reference of messages the bot understands. Send any of these in Telegram like a normal chat message.
+
+### General
+
+| Say this               | What happens                                       |
+|------------------------|----------------------------------------------------|
+| `hi`                   | Greets the bot. First time, triggers pairing.      |
+| any free-text message  | Regular AI-assistant reply.                        |
+
+### Content monitor
+
+| Say this                   | What happens                                         |
+|----------------------------|------------------------------------------------------|
+| `/content-monitor setup`   | Starts guided first-time setup.                      |
+| `setup content monitor`    | Same as above, plain-English version.                |
+| `manual test run`          | Runs the pipeline once so you can verify it works.   |
+| `approve`                  | Approves the most recent draft the bot showed you.   |
+| `what's new today?`        | Asks the monitor for today's topic suggestions.      |
+
+Add more bot skills later? Come back and check this section.
+
+## Keep these safe
+
+Your 5 keys (Telegram bot token, Anthropic, Firecrawl, Google AI, Brave) are like passwords. Don't share them publicly — screenshots, chats, emails, or code repositories. If one leaks, regenerate it on the provider's dashboard:
+
+- Telegram bot token → [BotFather](https://t.me/BotFather)
+- Anthropic → [console.anthropic.com](https://console.anthropic.com)
+- Firecrawl → [firecrawl.dev](https://www.firecrawl.dev/)
+- Google AI → [aistudio.google.com](https://aistudio.google.com/)
+- Brave Search → [api.search.brave.com](https://api.search.brave.com/)

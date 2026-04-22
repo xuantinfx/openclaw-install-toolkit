@@ -35,7 +35,7 @@ command -v node >/dev/null 2>&1 || { echo "error: 'node' not found in PATH" >&2;
 
 # Verify source files exist before we start wiping the delivery tree.
 required=(install.sh install.command \
-          instruction.md.tmpl instruction-multi-user.md.tmpl skills \
+          instruction.md.tmpl instruction-multi-user.md.tmpl skills images \
           scripts/render-pdf.mjs scripts/legal-header.md.tmpl scripts/pdf-style.css)
 for f in "${required[@]}"; do
   [ -e "$f" ] || { echo "error: missing source file: $f" >&2; exit 1; }
@@ -91,9 +91,11 @@ common=(install.sh install.command)
 
 cp "${common[@]}" "delivery/$single_dir/"
 cp -R skills "delivery/$single_dir/"
+cp -R images "delivery/$single_dir/"
 
 cp "${common[@]}" "delivery/$multi_dir/"
 cp -R skills "delivery/$multi_dir/"
+cp -R images "delivery/$multi_dir/"
 
 chmod +x "delivery/$single_dir/install.sh" "delivery/$single_dir/install.command"
 chmod +x "delivery/$multi_dir/install.sh"  "delivery/$multi_dir/install.command"
