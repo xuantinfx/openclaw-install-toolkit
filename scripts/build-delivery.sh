@@ -89,13 +89,15 @@ mkdir -p "delivery/$single_dir" "delivery/$multi_dir"
 
 common=(install.sh install.command)
 
+# Note: images/ is NOT copied into the delivery bundles. The PDF renderer
+# embeds every screenshot directly into the PDF (Puppeteer inlines images as
+# FlateDecode streams), so the zip ships only the installer + skills. This
+# keeps the zip at ~300 KB instead of ~25 MB.
 cp "${common[@]}" "delivery/$single_dir/"
 cp -R skills "delivery/$single_dir/"
-cp -R images "delivery/$single_dir/"
 
 cp "${common[@]}" "delivery/$multi_dir/"
 cp -R skills "delivery/$multi_dir/"
-cp -R images "delivery/$multi_dir/"
 
 chmod +x "delivery/$single_dir/install.sh" "delivery/$single_dir/install.command"
 chmod +x "delivery/$multi_dir/install.sh"  "delivery/$multi_dir/install.command"

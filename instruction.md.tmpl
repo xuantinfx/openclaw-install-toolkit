@@ -23,31 +23,38 @@ Collect all 5 keys first, then come back here. Don't start the installer until t
 **Where to get it:** [BotFather on Telegram](https://t.me/BotFather)
 **What it looks like:** `1234567890:ABCdef...` (a number, a colon, then letters)
 
-![Searching for BotFather in Telegram](images/01-botfather-search.png)
-
 1. Open Telegram, search `BotFather`, and tap the one with the blue checkmark.
+
+   ![Searching for BotFather in Telegram](images/01-botfather-search.png)
+
 2. Send `/newbot`.
 3. Pick a display name, then a username ending in `bot` (e.g. `myhelperbot`).
 4. Copy the long code BotFather replies with. Save it somewhere safe.
 
-![BotFather's reply with your bot token](images/02-botfather-token.png)
+   ![BotFather's reply with your bot token](images/02-botfather-token.png)
 
 ### 2 of 5 — Anthropic API key
 
 **What it's for:** lets your assistant use Claude (the AI brain).
-**Where to get it:** [console.anthropic.com](https://console.anthropic.com)
+**Where to get it:** [platform.claude.com](https://platform.claude.com/settings/workspaces/default/keys)
 **What it looks like:** `sk-ant-...`
 
-![Anthropic sign-up page](images/03-anthropic-signup.png)
+1. Go to [platform.claude.com](https://platform.claude.com/settings/workspaces/default/keys) and sign up or log in. (New domain — the old `console.anthropic.com` URL redirects here.)
 
-1. Go to [console.anthropic.com](https://console.anthropic.com) and sign up or log in.
+   ![Claude Console sign-in page](images/03-anthropic-signin.png)
+
 2. Add a payment method. Anthropic charges per use — usually a few cents per day of light use.
-3. Click **API Keys** in the menu, then **Create Key**.
-4. Copy the key it shows you. **You can't see it again after closing the page** — save it somewhere safe now.
+3. On the **API keys** page, click **Create key** in the top-right corner.
 
-![Creating an Anthropic API key](images/04-anthropic-create-key.png)
+   ![Claude Console API keys page with Create key highlighted](images/04-anthropic-keys-list.png)
 
-![Copy the key — it's shown only once](images/05-anthropic-key-reveal.png)
+4. Name your key (e.g. `openclaw-key`) and click **Add**.
+
+   ![Naming your new Anthropic API key](images/05-anthropic-create-key.png)
+
+5. Copy the key it shows you. **You can't see it again after closing the page** — save it somewhere safe now.
+
+   ![Copy the key — it's shown only once](images/06-anthropic-key-reveal.png)
 
 ### 3 of 5 — Firecrawl API key
 
@@ -55,46 +62,78 @@ Collect all 5 keys first, then come back here. Don't start the installer until t
 **Where to get it:** [firecrawl.dev](https://www.firecrawl.dev/)
 **What it looks like:** `fc-...`
 
-![Firecrawl dashboard](images/06-firecrawl-dashboard.png)
+1. Go to [firecrawl.dev](https://www.firecrawl.dev/) and sign up (GitHub or email). Firecrawl runs a short 4-step onboarding.
+2. **Step 1 of 4** — pick "Hand it to my AI agent" (this is us).
 
-1. Go to [firecrawl.dev](https://www.firecrawl.dev/) and sign up (GitHub or email).
-2. Once logged in, go to **Dashboard → API Keys**.
-3. Click **Create API Key** and copy the key it shows you.
-4. The free plan includes 500 credits per month — more than enough for normal use.
+   ![Firecrawl onboarding — pick "Hand it to my AI agent"](images/07-firecrawl-onboarding-start.png)
 
-![Creating a Firecrawl API key](images/07-firecrawl-create-key.png)
+3. **Step 2 of 4** — your API key is shown at the top. Click the copy icon next to it and save the key somewhere safe.
+
+   ![Firecrawl onboarding — copy your API key](images/08-firecrawl-onboarding-key.png)
+
+4. **Step 3 of 4** — tick **I agree to Firecrawl's Terms of Service** and click **Continue**.
+
+   ![Firecrawl onboarding — accept Terms of Service](images/09-firecrawl-onboarding-terms.png)
+
+5. Finish the remaining step. The free plan includes 500 credits per month — more than enough for normal use.
 
 ### 4 of 5 — Google AI API key
 
 **What it's for:** lets your assistant generate images for posts.
-**Where to get it:** [Google AI Studio](https://aistudio.google.com/)
+**Where to get it:** [aistudio.google.com/api-keys](https://aistudio.google.com/api-keys)
 **What it looks like:** `AIzaSy...`
 
-![Google AI Studio landing page](images/08-google-ai-studio.png)
+1. Go to [aistudio.google.com/api-keys](https://aistudio.google.com/api-keys) and sign in with your Google account. First-time visitors see a welcome popup — accept the terms and click **Continue**.
 
-1. Go to [Google AI Studio](https://aistudio.google.com/) and sign in with your Google account.
-2. Click **Get API Key** in the sidebar, then **Create API Key**.
-3. Pick an existing Google Cloud project, or let it create a new one.
-4. Copy the key. It starts with `AIzaSy...`.
-5. Enable billing at [Google Cloud Billing](https://console.cloud.google.com/billing) — image generation requires it (typically a few cents per image).
+   ![Google AI Studio welcome popup](images/10-google-ai-welcome.png)
 
-![Creating a Google AI API key](images/09-google-ai-create-key.png)
+2. On the **API Keys** page, click **Create API key** in the top-right corner.
+
+   ![Google AI Studio API Keys page with Create API key highlighted](images/11-google-ai-keys-page.png)
+
+3. Name your key (e.g. `openclaw gemini key`), leave the default project selected, and click **Create key**.
+
+   ![Google AI Studio — Create a new key modal](images/12-google-ai-create-key.png)
+
+4. Copy the key it shows you (starts with `AIzaSy...`) and save it.
+
+   ![Google AI Studio — API key details with copy button](images/13-google-ai-key-details.png)
+
+5. **Add a credit card before you leave the site** — image generation needs billing enabled. Go to [aistudio.google.com/billing](https://aistudio.google.com/billing) and add a payment method for this project (typically a few cents per image).
 
 ### 5 of 5 — Brave Search API key
 
 **What it's for:** lets your assistant pull in trending news for content ideas.
-**Where to get it:** [api.search.brave.com](https://api.search.brave.com/)
+**Where to get it:** [api-dashboard.search.brave.com/register](https://api-dashboard.search.brave.com/register)
 **What it looks like:** a long random string (no fixed prefix)
 
-![Brave Search API dashboard](images/10-brave-dashboard.png)
+1. Go to [api-dashboard.search.brave.com/register](https://api-dashboard.search.brave.com/register) and create an account.
 
-1. Go to [api.search.brave.com](https://api.search.brave.com/) and click **Get Started for Free**.
-2. Create an account, then go to **Dashboard → API Keys**.
-3. Pick the **Free** plan (2,000 queries per month — plenty).
-4. Add a credit card when prompted. Brave requires it for account verification but **will not charge you** on the Free plan.
-5. Click **Generate API Key** and copy it.
+   ![Brave Search API — Register new account](images/14-brave-register.png)
 
-![Generating a Brave Search API key](images/11-brave-generate-key.png)
+2. Once signed in, go to [Available plans](https://api-dashboard.search.brave.com/app/subscriptions/subscribe) and pick the **Search** plan. Click **Get started** — the plan includes $5/month in free credits, enough for ~2,000 queries.
+
+   ![Brave Search API — Available plans, Search "Get started"](images/15-brave-plans.png)
+
+3. Keep **Limit monthly spending** selected and click **Free**, then **Continue**. The note underneath confirms "$5.00/mo in free credits — you won't be charged."
+
+   ![Brave Search API — Confirm subscription (Free, limit spending)](images/16-brave-subscription.png)
+
+4. Add a credit card. Brave requires it for account verification but **will not charge you** while you stay on the Free limit.
+
+   ![Brave Search API — Payment details form](images/17-brave-payment.png)
+
+5. Go to the [API keys page](https://api-dashboard.search.brave.com/app/keys) and click **+ Add API key**.
+
+   ![Brave Search API — API keys page with Add API key](images/18-brave-keys-page.png)
+
+6. Give the key a name (e.g. `openclaw brave search`), leave **Subscription: Search** and **Free** selected, then click **Add**.
+
+   ![Brave Search API — Add new API key modal](images/19-brave-add-key.png)
+
+7. Back on the API keys page, click the copy icon next to your new key and save it.
+
+   ![Brave Search API — Copy your new key](images/20-brave-copy-key.png)
 
 ### ✅ Ready to install?
 
@@ -118,17 +157,13 @@ On your Mac:
 - Type: `Terminal`
 - Press **Enter**.
 
-![Opening Spotlight with Cmd+Space](images/12-terminal-spotlight.png)
+![Opening Spotlight with Cmd+Space](images/21-terminal-spotlight.png)
 
 A window with text will open. This is where you'll run the installer.
-
-![Terminal window open](images/13-terminal-open.png)
 
 ## STEP 2 — Unzip the toolkit and run the installer
 
 You received a file called `{{zip_name}}` via message.
-
-![The toolkit zip in Finder](images/14-finder-zip.png)
 
 1. In Finder, double-click the zip. macOS will unzip it into a folder.
 2. Open the folder. Inside you'll see at least these files:
@@ -137,10 +172,7 @@ You received a file called `{{zip_name}}` via message.
    install.sh
    install.command
    skills   (a sub-folder)
-   images   (a sub-folder with screenshots)
    ```
-
-![Unzipped toolkit folder](images/15-unzipped-folder.png)
 
 You can start the installer in one of two ways.
 
@@ -153,7 +185,7 @@ You can start the installer in one of two ways.
 3. Drag the file `install.sh` from the Finder folder into the Terminal window. The file's full path will appear right after `bash `.
 4. Now press **Enter**.
 
-![Dragging install.sh into Terminal](images/16-way-a-drag.png)
+![Terminal with install.sh path dragged in](images/22-installer-drag-path.png)
 
 ### Way B — double-click (simpler, but the first run triggers a macOS pop-up you have to click through)
 
@@ -173,10 +205,6 @@ You can start the installer in one of two ways.
 
 3. A new Terminal window will open and start the installer.
 
-![Right-click → Open on install.command](images/17-way-b-rightclick.png)
-
-![The "unidentified developer" pop-up](images/18-way-b-gatekeeper.png)
-
 ### When the installer asks for your keys
 
 Either way, after a few seconds the installer will stop and ask two questions. Paste from your checklist:
@@ -184,13 +212,11 @@ Either way, after a few seconds the installer will stop and ask two questions. P
 - **Telegram bot token:** paste key **#1** → press **Enter**.
 - **Anthropic API key:** paste key **#2** → press **Enter**.
 
-![Installer running](images/19-installer-running.png)
+![Installer prompting for Telegram bot token and Anthropic API key](images/23-installer-key-prompts.png)
 
 If you've installed OpenClaw on this Mac before, the installer also asks whether to wipe the old data first. Just press **Enter** to keep your existing data — the installer will reuse it. Type `y` and Enter only if you want a clean reinstall (this clears your saved bot connection and settings).
 
 Wait for the installer to finish. When it's done you'll see a success message. The skills are installed automatically as part of this step — no extra command.
-
-![Installer success](images/20-installer-success.png)
 
 At the very end, a browser tab will open automatically — that's your **OpenClaw Control UI (dashboard)**. Don't close it; you'll use it in the next step.
 
@@ -198,7 +224,7 @@ At the very end, a browser tab will open automatically — that's your **OpenCla
 
 The installer opened a browser tab titled **OpenClaw**. Switch to that tab now — it should still be open from Step 2. You don't need to do anything in it yet; just leave it open so you can glance at it while you set up the bot.
 
-![OpenClaw dashboard opened in browser](images/21-dashboard-opened.png)
+![OpenClaw Control UI opened in browser](images/24-dashboard-opened.png)
 
 If the tab isn't there — you closed it, or the installer couldn't open it — go back to Terminal and run:
 
@@ -212,15 +238,15 @@ That will reopen the dashboard.
 
 ## STEP 4 — Say hi to your bot
 
-Open Telegram. In the search bar, type the bot username you chose with BotFather, and tap your bot.
+Open Telegram. In the search bar, type the bot username you chose with BotFather, and tap your bot. First time opening the chat, Telegram shows a big **Start** button — tap it.
 
-📲 **Copy this and send it to your bot:**
+![Empty Telegram chat with the bot — Start button](images/25-telegram-bot-start.png)
+
+📲 **Copy this and send it to your bot** (or just tap **Start** — it sends the same command):
 
 ```
-hi
+/start
 ```
-
-![Sending "hi" to your bot](images/22-telegram-bot-greeting.png)
 
 The bot will reply with something like this:
 
@@ -233,7 +259,7 @@ Ask the bot owner to approve with:
 openclaw pairing approve telegram 6P25BBXP
 ```
 
-![Bot's pairing-request reply](images/23-pairing-message.png)
+![Bot's pairing-request reply](images/26-telegram-pairing-message.png)
 
 Don't worry — this is expected. The bot is asking you to prove you're the owner. The next step approves it.
 
@@ -249,7 +275,7 @@ Go back to your Terminal window.
 openclaw pairing approve telegram XXXXXXXX
 ```
 
-![Terminal showing successful approval](images/24-approval-success.png)
+![Terminal showing successful pairing approval](images/27-terminal-approval-success.png)
 
 Terminal prints a success confirmation. Now send your bot any message — e.g. "hello" — and it will reply like a real assistant. You're paired.
 
@@ -272,9 +298,9 @@ When you're ready, send this to your bot:
 /content-monitor setup
 ```
 
-![Bot starting content-monitor setup](images/25-content-monitor-setup.png)
+![Telegram with /content-monitor setup sent](images/28-telegram-setup-sent.png)
 
-The bot will ask the 7 questions in order. Here's what each one looks like and what to answer:
+The bot replies with the 7-step overview and starts asking one question at a time.
 
 ### Question 1 of 7 — Competitor websites
 
@@ -293,17 +319,29 @@ https://www.example-competitor-1.com
 https://www.example-competitor-2.com
 ```
 
+![Setup Q1 — competitor website list](images/29-setup-q1-websites.png)
+
 The bot will then ask, for each URL, whether it's **personal-injury**, **mortgage**, or **other**.
 
 ### Question 2 of 7 — Facebook + X login
 
-The bot opens a browser window and asks you to log into Facebook, then X (Twitter), so it can post on your behalf later. Log in manually in the browser, then tell the bot you're done.
+The bot opens a browser window and asks you to log into Facebook first — log in manually with your own account.
+
+![Facebook login page opened by the bot](images/30-facebook-login.png)
+
+Then the bot opens an X (Twitter) tab — log in there too, or skip.
+
+![X (Twitter) login page opened by the bot](images/31-x-login.png)
 
 📲 **When you've finished logging in, send:**
 
 ```
 done
 ```
+
+The bot confirms which account it sees and moves on.
+
+![Social login confirmed by the bot](images/32-setup-social-confirmed.png)
 
 📲 **Or to skip a platform (and set it up later):**
 
@@ -341,7 +379,12 @@ The bot asks for 3 keys, one at a time. You already have all three from the chec
 
 - **Firecrawl API key:** paste key **#3**.
 - **Google AI API key:** paste key **#4**.
+
+![Setup Q5 — Firecrawl and Google AI key prompts](images/33-setup-q5-api-keys.png)
+
 - **Brave Search API key:** paste key **#5**.
+
+![Setup Q5 — Brave Search key prompt](images/34-setup-q5-brave.png)
 
 ### Question 6 of 7 — Your website domain
 
@@ -369,9 +412,13 @@ default
 
 Or enter your own time, like `7:00 AM` or `08:30`. The bot will then ask for your timezone — send `default` for Asia/Saigon, or enter one like `America/Los_Angeles` or `Europe/London`.
 
+![Setup Q7 — daily schedule confirmed, first-time crawl starting](images/35-setup-q7-schedule.png)
+
 ### After all 7 questions
 
-The bot automatically sets up the workspace folders, does a first-time crawl of all competitor sites (takes a few minutes), and sends you a summary. You're done — the daily pipeline will now run on the schedule you picked.
+The bot automatically sets up the workspace folders, does a first-time crawl of all competitor sites (takes a few minutes), and sends you a summary table showing what's configured. You're done — the daily pipeline will now run on the schedule you picked.
+
+![Setup complete — configuration summary](images/36-setup-complete-summary.png)
 
 ## STEP 7 — Test that it works
 
@@ -381,9 +428,25 @@ The bot automatically sets up the workspace folders, does a first-time crawl of 
 run content pipeline
 ```
 
-![Bot reporting a successful test run](images/26-test-run-result.png)
+The bot runs the pipeline once and reports today's content candidates — usually two posts drawn from the day's theme.
 
-You should see the monitor run and report back what it found. Done! 🎉
+![Pipeline — today's content candidates](images/37-pipeline-candidates.png)
+
+Reply with `1`, `2`, or `both` to pick which candidate the bot should turn into a full post.
+
+![Pipeline — pick which post to use](images/38-pipeline-post-selection.png)
+
+The bot writes the full post, pastes it back, and asks whether to approve. Send `approve` (or `edit [instructions]`, `regenerate image`, or `skip`).
+
+![Pipeline — approve the draft](images/39-pipeline-approve.png)
+
+Once approved, the bot posts to Facebook (and X if you're logged in).
+
+![Published Facebook post](images/40-facebook-posted.png)
+
+Finally the bot prints a one-line summary — which platforms it posted to and which it skipped. Done! 🎉
+
+![Pipeline summary — platform post status](images/41-pipeline-summary.png)
 
 ## Troubleshooting
 
@@ -435,7 +498,11 @@ You should see the monitor run and report back what it found. Done! 🎉
 **"invalid Anthropic API key"**
 
 - The key must start with `sk-ant-`.
-- Re-copy it from [console.anthropic.com](https://console.anthropic.com) and try again.
+- Re-copy it from [platform.claude.com](https://platform.claude.com/settings/workspaces/default/keys) and try again.
+
+**"Image generation hit an issue — billing needs to be enabled"**
+
+- Google AI image generation requires a billing account. Go to [aistudio.google.com/billing](https://aistudio.google.com/billing) and add a payment method for your project, then ask the bot to `regenerate image`.
 
 **"skills/ not found next to install.sh"**
 
@@ -454,7 +521,7 @@ A quick reference of messages the bot understands. Send any of these in Telegram
 
 | Say this               | What happens                                       |
 |------------------------|----------------------------------------------------|
-| `hi`                   | Greets the bot. First time, triggers pairing.      |
+| `/start` or `hi`       | Greets the bot. First time, triggers pairing.      |
 | any free-text message  | Regular AI-assistant reply.                        |
 
 ### Content monitor
@@ -474,7 +541,7 @@ Add more bot skills later? Come back and check this section.
 Your 5 keys (Telegram bot token, Anthropic, Firecrawl, Google AI, Brave) are like passwords. Don't share them publicly — screenshots, chats, emails, or code repositories. If one leaks, regenerate it on the provider's dashboard:
 
 - Telegram bot token → [BotFather](https://t.me/BotFather)
-- Anthropic → [console.anthropic.com](https://console.anthropic.com)
+- Anthropic → [platform.claude.com/settings/workspaces/default/keys](https://platform.claude.com/settings/workspaces/default/keys)
 - Firecrawl → [firecrawl.dev](https://www.firecrawl.dev/)
-- Google AI → [aistudio.google.com](https://aistudio.google.com/)
-- Brave Search → [api.search.brave.com](https://api.search.brave.com/)
+- Google AI → [aistudio.google.com/api-keys](https://aistudio.google.com/api-keys)
+- Brave Search → [api-dashboard.search.brave.com/app/keys](https://api-dashboard.search.brave.com/app/keys)
