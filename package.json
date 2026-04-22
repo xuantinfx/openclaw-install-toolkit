@@ -1,0 +1,10 @@
+{
+  "name": "openclaw-install-toolkit",
+  "private": true,
+  "description": "Zip-delivered installer wrapping the official OpenClaw setup with a Telegram + Anthropic wizard and bundled skills.",
+  "scripts": {
+    "build-delivery": "bash scripts/build-delivery.sh",
+    "build-delivery:no-zip": "bash scripts/build-delivery.sh --no-zip",
+    "sync-skill": "bash scripts/sync-skill.sh"
+  }
+}
