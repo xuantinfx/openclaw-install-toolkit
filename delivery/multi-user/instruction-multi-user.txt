@@ -1,67 +1,249 @@
-Sharing one Mac with someone else? Read this.
-==============================================
+How to set up your OpenClaw AI assistant on Telegram (shared Mac)
+=================================================================
 
-Who this is for
----------------
+Hi! This guide helps you set up your own AI helper in Telegram, on a
+Mac that you share with someone else. No coding background needed.
 
-Two or more people sharing the same Mac, where each person has their
-own macOS login (their own name in the top-right menu). If it's just
-you on the Mac, ignore this file — follow instruction.txt instead.
+This guide is the shared-Mac version. "Shared Mac" means: two or more
+people each have their OWN macOS login (their own name in the top-right
+menu). If you are the ONLY person who uses this Mac, you're using the
+wrong guide — ask whoever sent this for the single-user version.
+
+The whole setup takes about 10-15 minutes per person.
 
 
-What you each need (cannot be shared)
+WHAT YOU EACH NEED (CANNOT BE SHARED)
 -------------------------------------
 
-  - Your own Telegram bot.
-      Each person runs BotFather and creates a bot under their own
-      Telegram account. See instruction.txt, section A, for how.
+Every person doing this setup needs their OWN:
 
-  - Your own Anthropic API key.
-      Each person signs up at console.anthropic.com and creates their
-      own key. See instruction.txt, section B.
+  - Telegram bot and bot token (section A below).
+  - Anthropic API key (section B below).
+  - Copy of the toolkit zip, unzipped inside THEIR OWN user folder
+    (for example, Downloads while logged in as yourself).
 
-  - Your own copy of the toolkit zip, unzipped inside your own user
-    folder (for example, your Downloads folder while logged in as you).
+Why separate bots and keys:
 
-
-Why separate bots and keys
---------------------------
-
-Only one bot can be "connected" to a given OpenClaw install. If you
-and your housemate shared one bot, your messages would all land on
-whichever Mac login happened to start first — and the other person's
-Telegram would stay silent.
-
-The Anthropic key is also tied to billing. Keeping keys separate means
-each person pays only for their own usage.
+  - Only one bot can be "connected" to a given OpenClaw install. If you
+    and your housemate shared one bot, your messages would all land on
+    whichever Mac login happened to start first — and the other person's
+    Telegram would stay silent.
+  - The Anthropic key is tied to billing. Separate keys means each
+    person pays only for their own usage.
 
 
-How to install (each person, one at a time)
--------------------------------------------
+BEFORE YOU START — get these two things ready
+---------------------------------------------
 
-  1. Log into your OWN macOS account. Not the other person's.
+A) A Telegram bot token
+   This is a password-like code that lets your computer talk to a Telegram bot.
 
-  2. Follow instruction.txt from STEP 1 through STEP 7. Every step
-     works the same as if you were the only person on the Mac.
+   How to get one:
+   1. Open Telegram (on your phone, desktop, or telegram.org — any of them).
+   2. In the search bar, type  BotFather  and open the official account
+      (blue checkmark next to the name).
+   3. Send it the message:  /newbot
+   4. It will ask for a name and a username for your bot. Pick anything you
+      like. (The username must end in "bot", e.g. "myhelperbot".) Use a name
+      only YOU will use — do not share this bot with the other person on the
+      Mac; they'll create their own.
+   5. BotFather will send you back a long code that looks like:
+        1234567890:ABCdefGHIjklmnoPQRstuvWXYz-1234567890
+      That is your bot token. Copy it somewhere safe — you'll paste it later.
 
-  3. Near the end of the installer, watch for a line like this:
+B) An Anthropic API key
+   This is the key that lets your assistant use Claude (the AI brain).
 
-         [OK] gateway healthy on 127.0.0.1:18790
+   How to get one:
+   1. Go to:  https://console.anthropic.com
+   2. Sign up or log in with YOUR OWN account (not shared with the other
+      person — billing is tied to the account).
+   3. Add a payment method (Anthropic charges per use — usually a few cents).
+   4. Click "API Keys" in the menu, then "Create Key".
+   5. Copy the key it shows you. It starts with  sk-ant-...
+      Save it somewhere safe — you can't see it again after closing the page.
 
-     The number after the colon is YOUR port. The first person to
-     install on the Mac usually gets 18789, the second person 18790,
-     and so on. You don't need to type this number anywhere — just
-     know it's yours.
-
-  4. If you see a line like this during install, that's normal too:
-
-         [port] 18789 is busy; using 18790 instead
-
-     It means someone on this Mac already claimed 18789, so the
-     installer picked the next free port for you automatically.
+Got both? Great. Let's install.
 
 
-Can we install at the same time?
+STEP 1 — Log into YOUR OWN macOS account
+----------------------------------------
+
+On a shared Mac this is the most important step. Before you do anything
+else:
+
+  - Look at the top-right of the menu bar. If it shows the other person's
+    name, click it and switch to YOUR name (or log out and back in).
+  - All the following steps happen while logged in as YOU. Your bot
+    token, API key, config, and chat history will live under your
+    account (in ~/.openclaw). The other person cannot see any of it
+    unless they know your Mac password.
+
+
+STEP 2 — Open Terminal
+----------------------
+
+On your Mac (while logged in as yourself):
+  - Press Command + Space (opens Spotlight search).
+  - Type:  Terminal
+  - Press Enter.
+
+A window with text will open. This is where you'll run the installer.
+
+
+STEP 3 — Unzip the toolkit and run the installer
+------------------------------------------------
+
+You received a file called  openclaw-toolkit.zip  via message.
+Make sure the copy you use is inside your own user folder (for example,
+your Downloads folder while logged in as you — not the other person's).
+
+  1. In Finder, double-click the zip. macOS will unzip it into a folder.
+  2. Open the folder. Inside you'll see at least these files:
+        install.sh
+        install.command
+        skills   (a sub-folder)
+
+You can start the installer in one of two ways.
+
+>>> Not sure which to pick? Use Way A. It never triggers the
+    "unidentified developer" warning that may appear with Way B. <<<
+
+Way A — drag-to-Terminal (RECOMMENDED, no pop-up warnings):
+
+  1. Make sure the Terminal window from STEP 2 is open.
+  2. Click in the Terminal window. Type the four characters  bash  then
+     press the SPACE BAR once. Do NOT press Enter yet.
+  3. Drag the file  install.sh  from the Finder folder into the Terminal
+     window. The file's full path will appear right after "bash ".
+  4. Now press Enter.
+
+Way B — double-click (simpler, but the first run triggers a macOS
+        Gatekeeper warning you have to click through):
+
+  1. In Finder, double-click  install.command
+  2. The first time you do this, macOS will almost certainly show:
+        "install.command cannot be opened because it is from an
+         unidentified developer."
+     This is NORMAL — the file is safe, it just isn't signed by Apple.
+     To get past it:
+        a) Close the warning.
+        b) Back in Finder, right-click (or Control-click) on
+           install.command.
+        c) Choose  Open  from the menu.
+        d) Click  Open  in the confirmation dialog.
+     macOS will remember your choice. Future runs open directly.
+  3. A new Terminal window will open and start the installer.
+
+Either way, after a few seconds the installer will stop and ask two questions:
+
+  Telegram bot token:
+      Paste the long code from BotFather and press Enter.
+
+  Anthropic API key:
+      Paste the key that starts with sk-ant-... and press Enter.
+
+If you've installed OpenClaw on this Mac (on your own login) before, the
+installer also asks whether to wipe the old data first. Just press Enter
+to keep your existing data — the installer will reuse it. Type  y  and
+Enter only if you want a clean reinstall (this clears your saved bot
+connection and settings).
+
+Near the end of the installer, watch for a line like this:
+
+    [OK] gateway healthy on 127.0.0.1:18790
+
+The number after the colon is YOUR port. The first person to install on
+the Mac usually gets 18789, the second person 18790, and so on. You
+don't need to type this number anywhere — just know it's yours.
+
+If you also see a line like this during install, that's normal:
+
+    [port] 18789 is busy; using 18790 instead
+
+It means someone on this Mac already claimed 18789, so the installer
+picked the next free port for you automatically.
+
+Wait for it to finish. When it's done you'll see a success message.
+The skills are installed automatically as part of this step — no extra
+command.
+
+At the very end the installer will open your OpenClaw Control UI in
+your default browser automatically. You can close that window for now
+and come back to it later; Steps 4-8 below are all done through
+Telegram, not the UI. (If you'd rather not have a browser tab pop up,
+re-run the installer with OPENCLAW_NO_DASHBOARD=1 in front of it.)
+
+
+STEP 4 — Say hi to your bot
+---------------------------
+
+  1. Open Telegram on whichever device is easiest for you (phone is fine).
+  2. In the search bar, type the bot username YOU chose with BotFather,
+     and tap your bot. Make sure it's YOURS, not your housemate's.
+  3. Tap "Start" at the bottom, or just send it the message:  hi
+
+The bot will reply with something that looks like this:
+
+    OpenClaw: access not configured.
+    Your Telegram user id: 1048152213
+    Pairing code: 6P25BBXP
+
+    Ask the bot owner to approve with:
+    openclaw pairing approve telegram 6P25BBXP
+
+Don't worry — this is expected. It's asking you to prove you're the owner.
+
+
+STEP 5 — Approve yourself
+-------------------------
+
+From the bot's message, copy the line that starts with:
+
+    openclaw pairing approve telegram ...
+
+(Your code will be different from the example.)
+
+Go back to Terminal (the same window, still logged in as you), paste
+that line, and press Enter. It will confirm that you're approved.
+
+Now your Telegram bot is connected to the AI. Try sending it a message
+like "hello" — it should reply like a chat assistant.
+
+
+STEP 6 — Set up the content monitor
+-----------------------------------
+
+Go back to Telegram and send this message to your bot:
+
+    /content-monitor setup
+
+The bot will start walking you through the setup by asking questions.
+
+
+STEP 7 — Follow the bot's instructions
+--------------------------------------
+
+Just answer the bot's questions in Telegram. It will tell you what to
+enter at each step. Take your time — if you're unsure, you can ask the
+bot to explain.
+
+
+STEP 8 — Test that it works
+---------------------------
+
+When setup is finished, send your bot this message:
+
+    manual test run
+
+You should see the monitor run and report back what it found. Done!
+
+If the other person hasn't installed yet, they can now log out, let
+the other person log in, and repeat from STEP 1 with their own zip,
+their own bot, and their own API key.
+
+
+CAN WE INSTALL AT THE SAME TIME?
 --------------------------------
 
 Technically yes — but it's cleaner if one person finishes first. The
@@ -71,8 +253,41 @@ both try to use it. If that happens, whoever runs second will see their
 bot fail to respond. Running the installer once more fixes it.
 
 
-Troubleshooting
+TROUBLESHOOTING
 ---------------
+
+"Permission denied" when running install.sh
+  → Use Way A from STEP 3: open Terminal, type  bash  and a space,
+    then drag install.sh into Terminal, then press Enter.
+  → This works even if the file lost its "executable" mark during unzip.
+
+install.command won't open — "unidentified developer" warning
+  → Right-click (or Control-click) on  install.command  in Finder.
+  → Choose  Open , then click  Open  in the confirmation dialog.
+  → macOS will remember your choice after that.
+
+Unzipping didn't create a folder
+  → Try double-clicking the zip again in Finder — macOS's built-in
+    Archive Utility is the most reliable. Avoid third-party unzip apps.
+
+The bot doesn't reply
+  → Make sure you completed STEP 5 (approval).
+  → Check that you're messaging the RIGHT bot (the one YOU made with
+    BotFather, not your housemate's).
+
+"invalid Telegram bot token format"
+  → The token should look like  123456789:AA... (a number, a colon,
+    then letters/numbers).
+  → Re-copy it from BotFather and try again.
+
+"invalid Anthropic API key"
+  → The key must start with  sk-ant-
+  → Re-copy it from console.anthropic.com and try again.
+
+"skills/ not found next to install.sh"
+  → The zip was unzipped incompletely or the  skills  folder was moved.
+  → Re-unzip the original zip file and run the installer from inside
+    the fresh folder (inside your own user folder).
 
 "no free port in 18789-18798"
   All ten reserved ports are taken. This usually means old OpenClaw
@@ -93,11 +308,23 @@ Bot stopped replying after the other person installed
   asked whether to wipe existing data — the installer will keep your
   config and just refresh the gateway service on a fresh free port.
 
+Something else
+  → Copy the error message and ask for help.
 
-Keeping things tidy
+
+KEEPING THINGS TIDY
 -------------------
 
 Nothing crosses between accounts. Each person's bot token, API key,
 config, and chat history live under their own macOS account (in
 ~/.openclaw). You cannot see each other's data unless someone shares
 their password — keep it that way.
+
+
+KEEP THESE SAFE
+---------------
+
+Your Telegram bot token and Anthropic API key are like passwords.
+Don't share them publicly (in screenshots, chats, or emails), and don't
+share them with the other person on the Mac — they have their own.
+If you think one leaked, regenerate it on BotFather / console.anthropic.com.
