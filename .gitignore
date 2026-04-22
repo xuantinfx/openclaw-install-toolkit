@@ -2,3 +2,4 @@
 .claude/
 delivery/*.zip
 node_modules/
+delivery/
